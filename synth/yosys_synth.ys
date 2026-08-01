@@ -1,0 +1,15 @@
+read_verilog -sv rtl/systolic_pe.sv
+read_verilog -sv rtl/systolic_array.sv
+hierarchy -check -top systolic_array
+proc
+opt
+memory
+opt
+techmap
+opt
+abc
+clean
+check -assert
+stat -top systolic_array
+write_json build/systolic_array_yosys.json
+write_verilog -noattr build/systolic_array_netlist.v

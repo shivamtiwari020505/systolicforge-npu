@@ -1,0 +1,48 @@
+name: verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rtl-and-compiler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install RTL simulator
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Verify systolic array
+        run: |
+          mkdir -p build
+          iverilog -g2012 -Wall -s tb_systolic_array -o build/core.vvp \
+            rtl/systolic_pe.sv rtl/systolic_array.sv tb/tb_systolic_array.sv
+          vvp build/core.vvp
+      - name: Verify mini-NPU
+        run: |
+          iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+            -s tb_systolicforge_npu -o build/npu.vvp \
+            rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+            tb/tb_systolicforge_npu.sv
+          vvp build/npu.vvp
+      - name: Verify DMA
+        run: |
+          iverilog -g2012 -Wall -s tb_scratchpad_dma -o build/dma.vvp \
+            rtl/scratchpad_dma.sv tb/tb_scratchpad_dma.sv
+          vvp build/dma.vvp
+      - name: Verify FPGA self-test wrapper
+        run: |
+          iverilog -g2012 -Wall -s tb_fpga_demo -o build/fpga_demo.vvp \
+            rtl/systolic_pe.sv rtl/systolic_array.sv \
+            fpga/common/systolicforge_fpga_demo.sv tb/tb_fpga_demo.sv
+          vvp build/fpga_demo.vvp
+      - name: Verify compiler
+        run: python -m unittest discover -s tests -v
+      - name: Verify compiler-to-RTL path
+        run: |
+          python compiler/systolicforge_compile.py examples/matmul.json \
+            -o build/example_program --array-rows 8 --array-cols 8
+          iverilog -g2012 -Wall -Wno-sensitivity-entire-array -s tb_compiled_program \
+            -o build/compiled_program.vvp rtl/systolic_pe.sv \
+            rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+            tb/tb_compiled_program.sv
+          vvp build/compiled_program.vvp

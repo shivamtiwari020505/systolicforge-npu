@@ -1,0 +1,19 @@
+{
+  "DESIGN_NAME": "systolic_array_pd_top",
+  "VERILOG_FILES": [
+    "dir::../../rtl/systolic_pe.sv",
+    "dir::../../rtl/systolic_array.sv",
+    "dir::../systolic_array_pd_top.sv"
+  ],
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 20.0,
+  "PNR_SDC_FILE": "dir::../constraints.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints.sdc",
+  "FP_SIZING": "relative",
+  "FP_CORE_UTIL": 35,
+  "PL_TARGET_DENSITY_PCT": 45,
+  "pdk::sky130A": {
+    "FP_CORE_UTIL": 30,
+    "PL_TARGET_DENSITY_PCT": 40
+  }
+}

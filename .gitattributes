@@ -1,0 +1,18 @@
+* text=auto
+.gitattributes text eol=lf
+.gitignore     text eol=lf
+
+*.sv   text eol=lf
+*.v    text eol=lf
+*.ys   text eol=lf
+*.tcl  text eol=lf
+*.sdc  text eol=lf
+*.xdc  text eol=lf
+*.mk   text eol=lf
+Makefile text eol=lf
+*.py   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.ps1  text eol=crlf
