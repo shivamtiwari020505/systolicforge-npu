@@ -1,26 +1,39 @@
 # SystolicForge NPU
 
-SystolicForge is a from-scratch INT8 matrix accelerator built as a portfolio-quality
-AI-chip project. It starts with a parameterized weight-stationary systolic array,
-wraps that array in a programmable mini-NPU, adds burst DMA and strided
-scratchpads, and includes FPGA, Sky130, and compiler flows.
+[![CI](https://github.com/shivamtiwari020505/systolicforge-npu/actions/workflows/verify.yml/badge.svg)](https://github.com/shivamtiwari020505/systolicforge-npu/actions/workflows/verify.yml)
+[![License: MIT](https://img.shields.io/github/license/shivamtiwari020505/systolicforge-npu)](LICENSE)
+
+SystolicForge is an open, from-scratch INT8 matrix accelerator spanning RTL,
+compiler, FPGA, and ASIC exploration flows. It combines a parameterized
+weight-stationary systolic array with a programmable mini-NPU, burst DMA,
+strided scratchpads, and a dependency-free MatMul compiler.
 
 The default compute engine is **8×8**: 64 signed INT8 MACs operate every cycle
 once the wavefront is full. `ROWS` and `COLS` are parameters, so the same RTL can
 be elaborated as a 16×16 array when the target has enough resources.
 
-```mermaid
-flowchart LR
-    G[JSON or ONNX MatMul] --> C[Tiling compiler]
-    C --> I[128-bit instruction stream]
-    C --> D[A/B scratchpad images]
-    E[External memory] <--> DMA[Burst DMA]
-    DMA <--> S[A, B, C scratchpads]
-    I --> Q[Sequencer]
-    S --> Q
-    Q --> A[8x8 weight-stationary array]
-    A --> S
-```
+| At a glance | Current implementation |
+|---|---|
+| Numeric path | Signed INT8 × INT8 with signed INT32 accumulation |
+| Default compute | 8×8 array, 64 MAC/cycle |
+| Peak datapath rate | 12.8 GOPS at 100 MHz, counting multiply and add separately (theoretical) |
+| Programming model | 128-bit `NOP` / tiled `MATMUL` / `HALT` instruction stream |
+| End-to-end path | JSON or optional ONNX → compiler images → self-checking RTL execution |
+| Reproducible evidence | Icarus, Verilator, Yosys, and Graphviz exercised by CI |
+
+**Project status:** the RTL regressions, compiler-to-RTL flow, lint, generic
+netlist simulation, and Xilinx-7 resource mapping are reproducible and passing.
+Routed Basys3 timing/bitstream evidence and Sky130 post-route PPA remain external
+tool milestones, so this repository does not claim those results yet.
+
+## Architecture at a glance
+
+![SystolicForge system architecture](docs/diagrams/system_architecture.svg)
+
+Every block in this diagram maps to committed RTL or compiler code. See the
+[architecture and microarchitecture walkthrough](docs/ARCHITECTURE.md) for RTL
+anchors, the PE-array dataflow, controller behavior, and simulation-derived
+timing diagrams.
 
 ## What is implemented
 
@@ -43,14 +56,22 @@ The local regression currently passes:
 
 | Test | Coverage | Result |
 |---|---|---:|
-| Systolic core | Signed values, lane order, input bubble, 4×4 array | PASS |
-| Mini-NPU | Two instructions, K=6 split 4+2, accumulation, strides | PASS |
+| Systolic core | A=6x4 and B=4x4 on a physical 4x4 array; signed values, lane order, input bubble | PASS |
+| Mini-NPU | A=3x6 and B=6x3 on a physical 4x4 array; K split 4+2, accumulation, strides | PASS |
 | DMA | Five-word external→local and local→external bursts | PASS |
 | FPGA demo | Complete on-chip 8×8 self-test | PASS |
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |
 | Generic synthesis | 64 PEs, structural check, synthesized-netlist simulation | PASS |
 | Xilinx-7 mapping | 64 array DSPs; 66 DSP48E1 cells including self-test | PASS |
+
+The waveform figures are generated from Icarus VCD traces, and the block
+diagrams are rendered from committed Graphviz sources. Their reproduction
+commands and canonical signal-trace hashes are recorded in
+[docs/diagrams/WAVEFORM_EVIDENCE.md](docs/diagrams/WAVEFORM_EVIDENCE.md).
+The distinction between logical matrix dimensions and physical PE-array
+dimensions, along with a signal-by-signal GTKWave explanation, is documented
+in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#logical-matrices-versus-the-physical-pe-array).
 
 Run everything on Windows:
 
@@ -70,6 +91,13 @@ With Yosys installed:
 make synth       # generic gate netlist and saved report
 make gate-sim    # run the synthesized 8x8 netlist against the testbench
 make synth-xc7   # Xilinx 7-series resource mapping for the Basys3 demo
+```
+
+To reproduce the complete evidence set with Icarus, Verilator, Yosys, and
+Graphviz installed:
+
+```sh
+make evidence
 ```
 
 The regression needs Python 3.10+ and Icarus Verilog. The JSON compiler has no
@@ -136,4 +164,5 @@ tests/      Python compiler tests
 
 The detailed design is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the
 binary contract is in [docs/ISA.md](docs/ISA.md), and synthesis evidence is in
-[docs/SYNTHESIS.md](docs/SYNTHESIS.md).
+[docs/SYNTHESIS.md](docs/SYNTHESIS.md). Contributions are welcome; see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the verification and evidence policy.

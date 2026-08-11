@@ -54,6 +54,13 @@ module tb_systolic_array;
 
     always #5 clk = ~clk;
 
+`ifdef DUMP_VCD
+    initial begin
+        $dumpfile("build/waves/systolic_array.vcd");
+        $dumpvars(0, clk, rst_n, weight_load, input_valid, output_valid);
+    end
+`endif
+
     always @(negedge clk) begin
         if (rst_n) begin
             for (j = 0; j < COLS; j = j + 1) begin

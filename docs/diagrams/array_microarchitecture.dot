@@ -1,0 +1,99 @@
+digraph SystolicArrayMicroarchitecture {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    pad="0.35",
+    nodesep="0.36",
+    ranksep="0.68",
+    splines=polyline,
+    size="14,8!",
+    ratio="compress",
+    fontname="Arial",
+    label="Systolic array and processing-element microarchitecture",
+    labelloc=t,
+    fontsize=22
+  ];
+  node [shape=box, style="rounded,filled", fontname="Arial", fontsize=10,
+        color="#334155", fillcolor="#f8fafc", fontcolor="#0f172a", margin="0.11,0.07"];
+  edge [fontname="Arial", fontsize=9, color="#475569", fontcolor="#334155", arrowsize=0.7];
+
+  input [label="A row vector\nR signed INT8 lanes", fillcolor="#eff6ff", color="#2563eb"];
+
+  subgraph cluster_skew {
+    label="Input lane skew (row k delayed k cycles)";
+    color="#2563eb";
+    style="rounded,dashed";
+    s0 [label="lane 0\n0 delays", fillcolor="#eff6ff"];
+    s1 [label="lane 1\n1 × REG", fillcolor="#eff6ff"];
+    sr [label="lane R−1\n(R−1) × REG", fillcolor="#eff6ff"];
+  }
+
+  subgraph cluster_array {
+    label="systolic_array: R rows × C columns";
+    color="#7c3aed";
+    style="rounded";
+
+    pe00 [label="PE[0,0]\nw=B[0,0]", fillcolor="#f5f3ff", color="#7c3aed"];
+    pe01 [label="PE[0,1]\nw=B[0,1]", fillcolor="#f5f3ff", color="#7c3aed"];
+    pe0c [label="PE[0,C−1]\nw=B[0,C−1]", fillcolor="#f5f3ff", color="#7c3aed"];
+
+    pe10 [label="PE[1,0]\nw=B[1,0]", fillcolor="#f5f3ff", color="#7c3aed"];
+    pe11 [label="PE[1,1]\nw=B[1,1]", fillcolor="#f5f3ff", color="#7c3aed"];
+    pe1c [label="PE[1,C−1]\nw=B[1,C−1]", fillcolor="#f5f3ff", color="#7c3aed"];
+
+    per0 [label="PE[R−1,0]\nw=B[R−1,0]", fillcolor="#f5f3ff", color="#7c3aed"];
+    per1 [label="PE[R−1,1]\nw=B[R−1,1]", fillcolor="#f5f3ff", color="#7c3aed"];
+    perc [label="PE[R−1,C−1]\nw=B[R−1,C−1]", fillcolor="#f5f3ff", color="#7c3aed"];
+
+    pe00 -> pe01 [label="a east", color="#2563eb"];
+    pe01 -> pe0c [label="…", color="#2563eb"];
+    pe10 -> pe11 [color="#2563eb"];
+    pe11 -> pe1c [label="…", color="#2563eb"];
+    per0 -> per1 [color="#2563eb"];
+    per1 -> perc [label="…", color="#2563eb"];
+
+    pe00 -> pe10 [label="psum south", color="#dc2626"];
+    pe10 -> per0 [label="…", color="#dc2626"];
+    pe01 -> pe11 [color="#dc2626"];
+    pe11 -> per1 [label="…", color="#dc2626"];
+    pe0c -> pe1c [color="#dc2626"];
+    pe1c -> perc [label="…", color="#dc2626"];
+  }
+
+  output [label="C output lanes\nC signed INT32 values\nindependent valid bits", fillcolor="#fef2f2", color="#dc2626"];
+
+  input -> s0;
+  input -> s1;
+  input -> sr;
+  s0 -> pe00 [color="#2563eb"];
+  s1 -> pe10 [color="#2563eb"];
+  sr -> per0 [color="#2563eb"];
+  per0 -> output [color="#dc2626"];
+  per1 -> output [color="#dc2626"];
+  perc -> output [color="#dc2626"];
+
+  subgraph cluster_pe {
+    label="One systolic_pe (registered every hop)";
+    color="#0f766e";
+    style="rounded";
+    wreg [label="weight_q\nINT8 register", fillcolor="#f0fdfa", color="#0f766e"];
+    mul [label="signed ×\nINT8 × INT8\n→ INT16", shape=circle, fillcolor="#f0fdfa", color="#0f766e"];
+    sext [label="sign extend\nINT16 → INT32", fillcolor="#f0fdfa", color="#0f766e"];
+    add [label="+", shape=circle, fillcolor="#fef2f2", color="#dc2626"];
+    psreg [label="psum_out\nINT32 register", fillcolor="#fef2f2", color="#dc2626"];
+    areg [label="activation_out\nINT8 register", fillcolor="#eff6ff", color="#2563eb"];
+
+    wreg -> mul [label="stationary"];
+    mul -> sext;
+    sext -> add;
+    add -> psreg [label="south"];
+  }
+
+  ain [label="activation_in", shape=plaintext];
+  pin [label="psum_in\n(0 on top row)", shape=plaintext];
+  wload [label="weight_load / weight_in", shape=plaintext];
+  ain -> mul [color="#2563eb"];
+  ain -> areg [color="#2563eb", label="east"];
+  pin -> add [color="#dc2626"];
+  wload -> wreg [color="#0f766e"];
+}

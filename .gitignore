@@ -6,4 +6,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 pd/runs/
-release/*.zip
+
+# Local planning and generated handoff bundles are not source artifacts.
+docs/commercial/
+release/

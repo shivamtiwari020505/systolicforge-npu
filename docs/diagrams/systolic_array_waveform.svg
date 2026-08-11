@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1004" height="414" viewBox="0 0 1004 414" role="img" aria-labelledby="title desc">
+<title id="title">Measured systolic-array wavefront</title>
+<desc id="desc">4×4 RTL test: one weight-load pulse, six A rows, one injected valid bubble, staggered column drain Generated from canonical trace SHA-256 51ce8fbcf76bf6d486df95d6b5dfc8e40d4bbbc27d787c59d45f92dc2573e542.</desc>
+<style>
+  .title { font: 700 21px Arial, sans-serif; fill: #0f172a; }
+  .subtitle { font: 12px Arial, sans-serif; fill: #475569; }
+  .label { font: 600 12px Consolas, monospace; fill: #0f172a; }
+  .cycle { font: 10px Consolas, monospace; fill: #64748b; }
+  .bus { font: 600 10px Consolas, monospace; fill: #0f172a; }
+  .foot { font: 10px Consolas, monospace; fill: #64748b; }
+</style>
+<rect width="1004" height="414" fill="#ffffff"/>
+<text x="20.0" y="32.0" class="title" text-anchor="start">Measured systolic-array wavefront</text>
+<text x="20.0" y="53.0" class="subtitle" text-anchor="start">4×4 RTL test: one weight-load pulse, six A rows, one injected valid bubble, staggered column drain</text>
+<line x1="178" y1="86" x2="178" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="199.0" y="79.0" class="cycle" text-anchor="middle">C0</text>
+<line x1="220" y1="86" x2="220" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="241.0" y="79.0" class="cycle" text-anchor="middle">C1</text>
+<line x1="262" y1="86" x2="262" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="283.0" y="79.0" class="cycle" text-anchor="middle">C2</text>
+<line x1="304" y1="86" x2="304" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="325.0" y="79.0" class="cycle" text-anchor="middle">C3</text>
+<line x1="346" y1="86" x2="346" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="367.0" y="79.0" class="cycle" text-anchor="middle">C4</text>
+<line x1="388" y1="86" x2="388" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="409.0" y="79.0" class="cycle" text-anchor="middle">C5</text>
+<line x1="430" y1="86" x2="430" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="451.0" y="79.0" class="cycle" text-anchor="middle">C6</text>
+<line x1="472" y1="86" x2="472" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="493.0" y="79.0" class="cycle" text-anchor="middle">C7</text>
+<line x1="514" y1="86" x2="514" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="535.0" y="79.0" class="cycle" text-anchor="middle">C8</text>
+<line x1="556" y1="86" x2="556" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="577.0" y="79.0" class="cycle" text-anchor="middle">C9</text>
+<line x1="598" y1="86" x2="598" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="619.0" y="79.0" class="cycle" text-anchor="middle">C10</text>
+<line x1="640" y1="86" x2="640" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="661.0" y="79.0" class="cycle" text-anchor="middle">C11</text>
+<line x1="682" y1="86" x2="682" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="703.0" y="79.0" class="cycle" text-anchor="middle">C12</text>
+<line x1="724" y1="86" x2="724" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="745.0" y="79.0" class="cycle" text-anchor="middle">C13</text>
+<line x1="766" y1="86" x2="766" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="787.0" y="79.0" class="cycle" text-anchor="middle">C14</text>
+<line x1="808" y1="86" x2="808" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="829.0" y="79.0" class="cycle" text-anchor="middle">C15</text>
+<line x1="850" y1="86" x2="850" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="871.0" y="79.0" class="cycle" text-anchor="middle">C16</text>
+<line x1="892" y1="86" x2="892" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="913.0" y="79.0" class="cycle" text-anchor="middle">C17</text>
+<line x1="934" y1="86" x2="934" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="955.0" y="79.0" class="cycle" text-anchor="middle">C18</text>
+<line x1="976" y1="86" x2="976" y2="344" stroke="#e2e8f0" stroke-width="1"/>
+<text x="18.0" y="133.0" class="label" text-anchor="start">clk</text>
+<path d="M 178 139 H 199.0 V 114 H 220 V 139 M 220 139 H 241.0 V 114 H 262 V 139 M 262 139 H 283.0 V 114 H 304 V 139 M 304 139 H 325.0 V 114 H 346 V 139 M 346 139 H 367.0 V 114 H 388 V 139 M 388 139 H 409.0 V 114 H 430 V 139 M 430 139 H 451.0 V 114 H 472 V 139 M 472 139 H 493.0 V 114 H 514 V 139 M 514 139 H 535.0 V 114 H 556 V 139 M 556 139 H 577.0 V 114 H 598 V 139 M 598 139 H 619.0 V 114 H 640 V 139 M 640 139 H 661.0 V 114 H 682 V 139 M 682 139 H 703.0 V 114 H 724 V 139 M 724 139 H 745.0 V 114 H 766 V 139 M 766 139 H 787.0 V 114 H 808 V 139 M 808 139 H 829.0 V 114 H 850 V 139 M 850 139 H 871.0 V 114 H 892 V 139 M 892 139 H 913.0 V 114 H 934 V 139 M 934 139 H 955.0 V 114 H 976 V 139" fill="none" stroke="#334155" stroke-width="2"/>
+<rect x="8" y="152" width="988" height="48" fill="#f8fafc"/>
+<text x="18.0" y="181.0" class="label" text-anchor="start">rst_n</text>
+<path d="M 178 162 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<text x="18.0" y="229.0" class="label" text-anchor="start">weight_load</text>
+<path d="M 178 235 H 220 V 210 H 262 V 235 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<rect x="8" y="248" width="988" height="48" fill="#f8fafc"/>
+<text x="18.0" y="277.0" class="label" text-anchor="start">input_valid</text>
+<path d="M 178 283 H 220 H 262 H 304 V 258 H 346 H 388 V 283 H 430 V 258 H 472 H 514 H 556 H 598 V 283 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<text x="18.0" y="325.0" class="label" text-anchor="start">output_valid[3:0]</text>
+<rect x="179" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="325.0" y="323.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="473" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="493.0" y="323.0" class="bus" text-anchor="middle">0b0001</text>
+<rect x="515" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="535.0" y="323.0" class="bus" text-anchor="middle">0b0011</text>
+<rect x="557" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="577.0" y="323.0" class="bus" text-anchor="middle">0b0110</text>
+<rect x="599" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="619.0" y="323.0" class="bus" text-anchor="middle">0b1101</text>
+<rect x="641" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="661.0" y="323.0" class="bus" text-anchor="middle">0b1011</text>
+<rect x="683" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="703.0" y="323.0" class="bus" text-anchor="middle">0b0111</text>
+<rect x="725" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="745.0" y="323.0" class="bus" text-anchor="middle">0b1111</text>
+<rect x="767" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="787.0" y="323.0" class="bus" text-anchor="middle">0b1110</text>
+<rect x="809" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="829.0" y="323.0" class="bus" text-anchor="middle">0b1100</text>
+<rect x="851" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="871.0" y="323.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="893" y="303" width="82" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="934.0" y="323.0" class="bus" text-anchor="middle">0b0000</text>
+<text x="20.0" y="392.0" class="foot" text-anchor="start">source: 51ce8fbcf76bf6d4…  •  falling-edge samples  •  generated by scripts/render_waveforms.py</text>
+</svg>

@@ -1,0 +1,76 @@
+digraph SystolicForgeSystem {
+  graph [
+    rankdir=TB,
+    bgcolor="white",
+    pad="0.35",
+    nodesep="0.42",
+    ranksep="0.72",
+    splines=polyline,
+    size="11,8!",
+    ratio="compress",
+    fontname="Arial",
+    label="SystolicForge NPU — implemented system architecture",
+    labelloc=t,
+    fontsize=22
+  ];
+  node [shape=box, style="rounded,filled", fontname="Arial", fontsize=11,
+        color="#334155", fillcolor="#f8fafc", fontcolor="#0f172a", margin="0.13,0.09"];
+  edge [fontname="Arial", fontsize=9, color="#475569", fontcolor="#334155", arrowsize=0.75];
+
+  subgraph cluster_software {
+    label="Software / build time";
+    color="#93c5fd";
+    style="rounded,dashed";
+    compiler [label="systolicforge_compile.py\nJSON / optional ONNX frontend\nquantize • tile • encode", fillcolor="#eff6ff", color="#2563eb"];
+    artifacts [label="Generated images\nprogram.hex (128-bit words)\na.hex • b.hex • expected C", shape=note, fillcolor="#eff6ff", color="#2563eb"];
+    compiler -> artifacts [label="emits"];
+  }
+
+  subgraph cluster_soc {
+    label="systolicforge_soc";
+    color="#64748b";
+    style="rounded";
+
+    dma [label="scratchpad_dma\n32-bit, word-burst engine\n1 read outstanding", fillcolor="#fff7ed", color="#ea580c"];
+
+    subgraph cluster_npu {
+      label="systolicforge_npu";
+      color="#0f766e";
+      style="rounded";
+
+      imem [label="Instruction memory\n256 × 128-bit default", fillcolor="#ecfeff", color="#0891b2"];
+      fsm [label="Sequencer + PC\nIDLE → FETCH → LOAD_WEIGHTS\n→ STREAM → DRAIN", fillcolor="#f0fdfa", color="#0f766e"];
+      regs [label="Decoded tile registers\nM, K, N • bases • strides\nACCUMULATE", fillcolor="#f0fdfa", color="#0f766e"];
+
+      sp_a [label="A scratchpad\nsigned INT8", fillcolor="#fefce8", color="#ca8a04"];
+      sp_b [label="B scratchpad\nsigned INT8", fillcolor="#fefce8", color="#ca8a04"];
+      sp_c [label="C scratchpad\nsigned INT32", fillcolor="#fefce8", color="#ca8a04"];
+
+      array [label="systolic_array\nR × C signed INT8 MAC PEs\nweight-stationary dataflow", fillcolor="#f5f3ff", color="#7c3aed", penwidth=1.6];
+
+      imem -> fsm [label="instruction[127:0]"];
+      fsm -> regs [label="decode / latch"];
+      regs -> sp_a [style=dashed, arrowhead=none, label="base + row·lda + k"];
+      regs -> sp_b [style=dashed, arrowhead=none, label="base + k·ldb + col"];
+      regs -> sp_c [style=dashed, arrowhead=none, label="base + row·ldc + col"];
+      fsm -> array [label="weight_load\ninput_valid"];
+      sp_a -> array [label="R × INT8 activations"];
+      sp_b -> array [label="R × C INT8 weights"];
+      array -> sp_c [label="C × INT32 results\nper-column valid"];
+    }
+  }
+
+  host [label="Configuration / host\nprogram writes • start\nDMA commands • status", fillcolor="#f1f5f9"];
+  extmem [label="External memory\n32-bit request/response", shape=cylinder, fillcolor="#fff7ed", color="#ea580c"];
+
+  artifacts -> host [label="load"];
+  host -> imem [label="program_we / addr / data"];
+  host -> fsm [label="start", color="#0f766e"];
+  fsm -> host [label="busy / done / fault", color="#0f766e"];
+  host -> dma [label="DMA command"];
+  dma -> host [label="ready / busy / done"];
+  extmem -> dma [dir=both, label="valid / ready\nread response"];
+  dma -> sp_a [dir=both, label="local port when !busy"];
+  dma -> sp_b [dir=both];
+  dma -> sp_c [dir=both];
+}

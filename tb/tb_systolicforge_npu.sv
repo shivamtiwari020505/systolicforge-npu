@@ -69,6 +69,15 @@ module tb_systolicforge_npu;
 
     always #5 clk = ~clk;
 
+`ifdef DUMP_VCD
+    initial begin
+        $dumpfile("build/waves/npu_instruction.vcd");
+        $dumpvars(0, clk, rst_n, start, busy, done, fault, pc_debug);
+        $dumpvars(0, dut.state_q, dut.weight_load, dut.array_input_valid,
+                     dut.array_output_valid, dut.issue_row_q);
+    end
+`endif
+
     function automatic [127:0] matmul_instruction(
         input integer flags,
         input integer m_size,

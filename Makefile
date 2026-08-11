@@ -2,7 +2,7 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core npu dma fpga-demo compiled-e2e compiler synth gate-sim synth-xc7
+.PHONY: test core npu dma fpga-demo compiled-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
 test: core npu dma fpga-demo compiler compiled-e2e
 
@@ -36,6 +36,13 @@ compiler:
 	$(PYTHON) -m unittest discover -s tests -v
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
 
+lint:
+	verilator --lint-only --timing -Wall \
+		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL \
+		--top-module systolicforge_soc \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv
+
 compiled-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
@@ -55,3 +62,25 @@ gate-sim: synth
 
 synth-xc7: build
 	$(YOSYS) -l build/yosys_xc7_synth.log -s synth/yosys_xc7_synth.ys
+
+waveforms: build
+	mkdir -p build/waves docs/diagrams
+	iverilog -g2012 -Wall -DDUMP_VCD -s tb_systolic_array \
+		-o build/waves/core.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv tb/tb_systolic_array.sv
+	vvp build/waves/core.vvp
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DDUMP_VCD \
+		-s tb_systolicforge_npu -o build/waves/npu.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		tb/tb_systolicforge_npu.sv
+	vvp build/waves/npu.vvp
+	$(PYTHON) scripts/render_waveforms.py build/waves docs/diagrams
+
+diagrams:
+	mkdir -p docs/diagrams
+	dot -Tsvg docs/diagrams/system_architecture.dot \
+		-o docs/diagrams/system_architecture.svg
+	dot -Tsvg docs/diagrams/array_microarchitecture.dot \
+		-o docs/diagrams/array_microarchitecture.svg
+
+evidence: test lint gate-sim synth-xc7 waveforms diagrams
