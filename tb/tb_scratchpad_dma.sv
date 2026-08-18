@@ -13,6 +13,8 @@ module tb_scratchpad_dma;
     logic [15:0] cmd_length;
     logic busy;
     logic done;
+    logic fault;
+    logic [3:0] fault_code;
     logic local_valid;
     logic local_ready;
     logic local_write;
@@ -53,6 +55,8 @@ module tb_scratchpad_dma;
         .cmd_length(cmd_length),
         .busy(busy),
         .done(done),
+        .fault(fault),
+        .fault_code(fault_code),
         .local_valid(local_valid),
         .local_ready(local_ready),
         .local_write(local_write),
@@ -156,6 +160,12 @@ module tb_scratchpad_dma;
                 $display("ERROR: DMA store word %0d mismatch", i);
                 errors = errors + 1;
             end
+        end
+
+        if (fault || (fault_code != 0)) begin
+            $display("ERROR: valid DMA regression retained fault 0x%0h",
+                     fault_code);
+            errors = errors + 1;
         end
 
         if (errors == 0)

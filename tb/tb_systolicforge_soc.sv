@@ -35,6 +35,7 @@ module tb_systolicforge_soc;
     logic busy;
     logic done;
     logic fault;
+    logic [3:0] fault_code;
 
     logic dma_cmd_valid;
     logic dma_cmd_ready;
@@ -93,6 +94,7 @@ module tb_systolicforge_soc;
         .busy(busy),
         .done(done),
         .fault(fault),
+        .fault_code(fault_code),
         .dma_cmd_valid(dma_cmd_valid),
         .dma_cmd_ready(dma_cmd_ready),
         .dma_cmd_to_local(dma_cmd_to_local),
@@ -322,7 +324,13 @@ module tb_systolicforge_soc;
             errors = errors + 1;
         end
         if (fault) begin
-            $display("ERROR: integrated SoC compute raised fault");
+            $display("ERROR: integrated SoC compute raised fault 0x%0h",
+                     fault_code);
+            errors = errors + 1;
+        end
+        if (fault_code != 0) begin
+            $display("ERROR: integrated SoC retained fault code 0x%0h",
+                     fault_code);
             errors = errors + 1;
         end
 

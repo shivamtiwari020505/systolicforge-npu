@@ -9,6 +9,7 @@ from compiler.systolicforge_compile import (
     compile_graph,
     matmul_reference,
     tile_matmul,
+    validate_program_bounds,
 )
 
 
@@ -47,6 +48,24 @@ class InstructionTests(unittest.TestCase):
         )
         self.assertEqual(program[4].a_base, 2550)
         self.assertEqual(program[4].c_base, 2550)
+
+    def test_strided_address_overflow_is_rejected(self) -> None:
+        program = [
+            MatMulInstruction(
+                flags=0,
+                m=2,
+                k=2,
+                n=2,
+                a_base=127,
+                b_base=0,
+                c_base=0,
+                lda=2,
+                ldb=2,
+                ldc=2,
+            )
+        ]
+        with self.assertRaisesRegex(ValueError, "A address"):
+            validate_program_bounds(program, scratchpad_depth=128)
 
 
 class CompilerTests(unittest.TestCase):
@@ -100,6 +119,34 @@ class CompilerTests(unittest.TestCase):
                     8,
                     64,
                     16,
+                )
+
+    def test_unsupported_scratchpad_depth_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "scratchpad depth"):
+                compile_graph(
+                    [[1]],
+                    [[1]],
+                    "bad_depth",
+                    Path(directory),
+                    8,
+                    8,
+                    (1 << 16) + 1,
+                    16,
+                )
+
+    def test_program_without_room_for_halt_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "program needs 2 words"):
+                compile_graph(
+                    [[1]],
+                    [[1]],
+                    "no_halt_space",
+                    Path(directory),
+                    8,
+                    8,
+                    64,
+                    1,
                 )
 
 

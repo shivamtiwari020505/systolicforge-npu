@@ -15,6 +15,7 @@ OP_NOP = 0x0
 OP_MATMUL = 0x1
 OP_HALT = 0xF
 FLAG_ACCUMULATE = 0x1
+MAX_ADDRESS_WORDS = 1 << 16
 
 
 @dataclass(frozen=True)
@@ -196,6 +197,32 @@ def tile_matmul(
     return instructions
 
 
+def validate_program_bounds(
+    program: Sequence[MatMulInstruction], scratchpad_depth: int
+) -> None:
+    """Validate every strided tile access against the hardware address space."""
+    if scratchpad_depth <= 0 or scratchpad_depth > MAX_ADDRESS_WORDS:
+        raise ValueError(
+            f"scratchpad depth must be between 1 and {MAX_ADDRESS_WORDS} words"
+        )
+
+    for pc, instruction in enumerate(program):
+        last_addresses = {
+            "A": instruction.a_base + (instruction.m - 1) * instruction.lda
+            + instruction.k - 1,
+            "B": instruction.b_base + (instruction.k - 1) * instruction.ldb
+            + instruction.n - 1,
+            "C": instruction.c_base + (instruction.m - 1) * instruction.ldc
+            + instruction.n - 1,
+        }
+        for memory, last_address in last_addresses.items():
+            if last_address < 0 or last_address >= scratchpad_depth:
+                raise ValueError(
+                    f"instruction {pc} {memory} address {last_address} exceeds "
+                    f"scratchpad depth {scratchpad_depth}"
+                )
+
+
 def matmul_reference(a: list[list[int]], b: list[list[int]]) -> list[list[int]]:
     m_size = len(a)
     k_size = len(a[0])
@@ -224,6 +251,13 @@ def compile_graph(
     scratchpad_depth: int,
     imem_depth: int,
 ) -> dict[str, Any]:
+    if imem_depth <= 0:
+        raise ValueError("IMEM depth must be positive")
+    if scratchpad_depth <= 0 or scratchpad_depth > MAX_ADDRESS_WORDS:
+        raise ValueError(
+            f"scratchpad depth must be between 1 and {MAX_ADDRESS_WORDS} words"
+        )
+
     a_rows, a_cols = _validate_rectangular(matrix_a, "A")
     b_rows, b_cols = _validate_rectangular(matrix_b, "B")
     if a_cols != b_rows:
@@ -232,6 +266,7 @@ def compile_graph(
     a_quant = quantize_matrix(matrix_a, "A")
     b_quant = quantize_matrix(matrix_b, "B")
     program = tile_matmul(a_rows, a_cols, b_cols, array_rows, array_cols)
+    validate_program_bounds(program, scratchpad_depth)
     if len(program) + 1 > imem_depth:
         raise ValueError(
             f"program needs {len(program) + 1} words, but IMEM depth is {imem_depth}"

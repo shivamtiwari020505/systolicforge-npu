@@ -18,6 +18,7 @@ module systolicforge_soc #(
     output logic                           busy,
     output logic                           done,
     output logic                           fault,
+    output logic [3:0]                     fault_code,
 
     input  logic                           dma_cmd_valid,
     output logic                           dma_cmd_ready,
@@ -46,6 +47,13 @@ module systolicforge_soc #(
     logic [31:0] local_wdata;
     logic [31:0] local_rdata;
     logic [$clog2(IMEM_DEPTH)-1:0] unused_pc;
+    logic npu_fault;
+    logic [3:0] npu_fault_code;
+    logic dma_fault;
+    logic [3:0] dma_fault_code;
+
+    assign fault = npu_fault || dma_fault;
+    assign fault_code = npu_fault ? npu_fault_code : dma_fault_code;
 
     scratchpad_dma #(
         .LOCAL_ADDR_W(ADDR_W),
@@ -63,6 +71,8 @@ module systolicforge_soc #(
         .cmd_length(dma_cmd_length),
         .busy(dma_busy),
         .done(dma_done),
+        .fault(dma_fault),
+        .fault_code(dma_fault_code),
         .local_valid(local_valid),
         .local_ready(local_ready),
         .local_write(local_write),
@@ -100,7 +110,8 @@ module systolicforge_soc #(
         .start(start && !dma_busy),
         .busy(busy),
         .done(done),
-        .fault(fault),
+        .fault(npu_fault),
+        .fault_code(npu_fault_code),
         .pc_debug(unused_pc)
     );
 

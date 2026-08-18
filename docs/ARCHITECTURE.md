@@ -126,7 +126,7 @@ the following controller states:
 | State | Work performed | Exit condition |
 |---|---|---|
 | `IDLE` | Accept `start`, clear prior fault, set `busy` | `start` |
-| `FETCH` | Read/decode instruction; reject illegal opcode or tile dimensions | NOP, MATMUL, HALT, or fault |
+| `FETCH` | Read/decode instruction; validate opcode, tile dimensions, PC, and complete A/B/C address ranges | NOP, MATMUL, HALT, or fault |
 | `LOAD_WEIGHTS` | Assert `weight_load` for the current K×N B tile | One cycle |
 | `STREAM` | Issue one A row per cycle | `m` rows issued |
 | `DRAIN` | Capture staggered array outputs into C | Last active column of last row |
@@ -215,6 +215,12 @@ Trace hashes and the regeneration contract are in
 byte address, direction, and word count. It keeps at most one external read
 outstanding:
 
+- A command is accepted only if its memory selector, complete local range,
+  complete external byte range, and word alignment are valid. Rejection pulses
+  `dma_done` with a structured fault code before any external request.
+- A zero-length command is a successful no-op and emits no local or external
+  transaction.
+
 - A load alternates `DMA_LOAD_REQ` and `DMA_LOAD_WAIT`, writing a local word
   only when the external response and local ready signals are both asserted.
 - A store holds the external write request in `DMA_STORE_REQ` until both local
@@ -241,8 +247,10 @@ not a measured application throughput claim. Utilization is reduced by partial
 tiles, array fill/drain, weight loading, DMA traffic, and instruction gaps.
 
 The controller rejects zero dimensions, K tiles larger than `ARRAY_ROWS`, N
-tiles larger than `ARRAY_COLS`, and unknown opcodes. Scratchpad bounds remain a
-software contract enforced by the compiler before emission.
+tiles larger than `ARRAY_COLS`, unknown opcodes, instruction-memory overrun,
+and any strided A/B/C range outside the physical scratchpads. The compiler
+enforces the same address limits before emission. The structured fault-code
+contract and recovery behavior are documented in [`ISA.md`](ISA.md#fault-reporting).
 
 ## Reproduce the evidence
 

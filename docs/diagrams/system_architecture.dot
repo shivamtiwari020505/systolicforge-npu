@@ -31,7 +31,7 @@ digraph SystolicForgeSystem {
     color="#64748b";
     style="rounded";
 
-    dma [label="scratchpad_dma\n32-bit, word-burst engine\n1 read outstanding", fillcolor="#fff7ed", color="#ea580c"];
+    dma [label="scratchpad_dma\n32-bit, word-burst engine\nrange preflight • 1 read outstanding", fillcolor="#fff7ed", color="#ea580c"];
 
     subgraph cluster_npu {
       label="systolicforge_npu";
@@ -39,7 +39,7 @@ digraph SystolicForgeSystem {
       style="rounded";
 
       imem [label="Instruction memory\n256 × 128-bit default", fillcolor="#ecfeff", color="#0891b2"];
-      fsm [label="Sequencer + PC\nIDLE → FETCH → LOAD_WEIGHTS\n→ STREAM → DRAIN", fillcolor="#f0fdfa", color="#0f766e"];
+      fsm [label="Sequencer + PC + bounds preflight\nIDLE → FETCH → LOAD_WEIGHTS\n→ STREAM → DRAIN", fillcolor="#f0fdfa", color="#0f766e"];
       regs [label="Decoded tile registers\nM, K, N • bases • strides\nACCUMULATE", fillcolor="#f0fdfa", color="#0f766e"];
 
       sp_a [label="A scratchpad\nsigned INT8", fillcolor="#fefce8", color="#ca8a04"];
@@ -66,9 +66,9 @@ digraph SystolicForgeSystem {
   artifacts -> host [label="load"];
   host -> imem [label="program_we / addr / data"];
   host -> fsm [label="start", color="#0f766e"];
-  fsm -> host [label="busy / done / fault", color="#0f766e"];
+  fsm -> host [label="busy / done / fault_code", color="#0f766e"];
   host -> dma [label="DMA command"];
-  dma -> host [label="ready / busy / done"];
+  dma -> host [label="ready / busy / done / fault_code"];
   extmem -> dma [dir=both, label="valid / ready\nread response"];
   dma -> sp_a [dir=both, label="local port when !busy"];
   dma -> sp_b [dir=both];

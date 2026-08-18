@@ -42,8 +42,8 @@ timing diagrams.
   propagation, and southward partial-sum propagation.
 - A parameterized 8×8/16×16-capable array with one-cycle-per-row streaming.
 - A 128-bit mini-NPU ISA with `NOP`, strided `MATMUL`, and `HALT`.
-- A/B/C scratchpads, K-tile accumulation, an instruction sequencer, and faults
-  for illegal tile sizes/opcodes.
+- A/B/C scratchpads, K-tile accumulation, an instruction sequencer, structured
+  fault codes, and hardware bounds checks before memory side effects.
 - A word-burst DMA with external valid/ready read and write channels.
 - A dependency-free JSON compiler plus an optional ONNX frontend.
 - A Basys3 self-test top, XDC, and non-project Vivado build script.
@@ -59,6 +59,7 @@ The local regression currently passes:
 | Systolic core | A=6x4 and B=4x4 on a physical 4x4 array; signed values, lane order, input bubble | PASS |
 | Mini-NPU | A=3x6 and B=6x3 on a physical 4x4 array; K split 4+2, accumulation, strides | PASS |
 | DMA | Five-word external→local and local→external bursts | PASS |
+| Fault safety | Opcode, dimension, PC, scratchpad, DMA selector/range, no-op, and recovery cases | PASS |
 | FPGA demo | Complete on-chip 8×8 self-test | PASS |
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |

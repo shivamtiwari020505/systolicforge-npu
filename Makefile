@@ -2,9 +2,9 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core npu dma fpga-demo compiled-e2e soc-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
+.PHONY: test core npu dma faults fpga-demo compiled-e2e soc-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core npu dma fpga-demo compiler compiled-e2e soc-e2e
+test: core npu dma faults fpga-demo compiler compiled-e2e soc-e2e
 
 build:
 	mkdir -p build
@@ -25,6 +25,14 @@ dma: build
 	iverilog -g2012 -Wall -s tb_scratchpad_dma -o build/dma.vvp \
 		rtl/scratchpad_dma.sv tb/tb_scratchpad_dma.sv
 	vvp build/dma.vvp
+
+faults: build
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_fault_reporting -o build/faults.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
+		tb/tb_fault_reporting.sv
+	vvp build/faults.vvp
 
 fpga-demo: build
 	iverilog -g2012 -Wall -s tb_fpga_demo -o build/fpga_demo.vvp \

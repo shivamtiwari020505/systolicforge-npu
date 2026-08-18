@@ -28,6 +28,7 @@ module tb_systolicforge_npu;
     logic busy;
     logic done;
     logic fault;
+    logic [3:0] fault_code;
     logic [$clog2(IMEM_DEPTH)-1:0] pc_debug;
 
     integer signed a [0:M-1][0:K-1];
@@ -64,6 +65,7 @@ module tb_systolicforge_npu;
         .busy(busy),
         .done(done),
         .fault(fault),
+        .fault_code(fault_code),
         .pc_debug(pc_debug)
     );
 
@@ -72,7 +74,7 @@ module tb_systolicforge_npu;
 `ifdef DUMP_VCD
     initial begin
         $dumpfile("build/waves/npu_instruction.vcd");
-        $dumpvars(0, clk, rst_n, start, busy, done, fault, pc_debug);
+        $dumpvars(0, clk, rst_n, start, busy, done, fault, fault_code, pc_debug);
         $dumpvars(0, dut.state_q, dut.weight_load, dut.array_input_valid,
                      dut.array_output_valid, dut.issue_row_q);
     end
@@ -209,7 +211,13 @@ module tb_systolicforge_npu;
             errors = errors + 1;
         end
         if (fault) begin
-            $display("ERROR: NPU raised fault at PC=%0d", pc_debug);
+            $display("ERROR: NPU raised fault 0x%0h at PC=%0d",
+                     fault_code, pc_debug);
+            errors = errors + 1;
+        end
+        if (fault_code != 0) begin
+            $display("ERROR: successful NPU run retained fault code 0x%0h",
+                     fault_code);
             errors = errors + 1;
         end
 

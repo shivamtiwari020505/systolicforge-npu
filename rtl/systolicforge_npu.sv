@@ -28,6 +28,7 @@ module systolicforge_npu #(
     output logic                         busy,
     output logic                         done,
     output logic                         fault,
+    output logic [3:0]                   fault_code,
     output logic [$clog2(IMEM_DEPTH)-1:0] pc_debug
 );
 
@@ -35,6 +36,12 @@ module systolicforge_npu #(
     localparam logic [3:0] OP_NOP    = 4'h0;
     localparam logic [3:0] OP_MATMUL = 4'h1;
     localparam logic [3:0] OP_HALT   = 4'hf;
+
+    localparam logic [3:0] FAULT_NONE             = 4'h0;
+    localparam logic [3:0] FAULT_ILLEGAL_OPCODE   = 4'h1;
+    localparam logic [3:0] FAULT_ILLEGAL_DIMENSION = 4'h2;
+    localparam logic [3:0] FAULT_ADDRESS_RANGE    = 4'h3;
+    localparam logic [3:0] FAULT_PROGRAM_OVERRUN  = 4'h4;
 
     localparam logic [1:0] MEM_A = 2'd0;
     localparam logic [1:0] MEM_B = 2'd1;
@@ -57,6 +64,21 @@ module systolicforge_npu #(
 
     logic [$clog2(IMEM_DEPTH)-1:0] pc_q;
     wire [INSTR_W-1:0] instruction = instruction_mem[pc_q];
+    wire [7:0] instruction_m = instruction[15:8];
+    wire [7:0] instruction_k = instruction[23:16];
+    wire [7:0] instruction_n = instruction[31:24];
+    wire [15:0] instruction_a_base = instruction[47:32];
+    wire [15:0] instruction_b_base = instruction[63:48];
+    wire [15:0] instruction_c_base = instruction[79:64];
+    wire [15:0] instruction_lda = instruction[95:80];
+    wire [15:0] instruction_ldb = instruction[111:96];
+    wire [15:0] instruction_ldc = instruction[127:112];
+
+    logic [31:0] a_last_address;
+    logic [31:0] b_last_address;
+    logic [31:0] c_last_address;
+    logic instruction_address_invalid;
+    logic pc_at_last_word;
 
     logic [7:0] m_size_q;
     logic [7:0] k_size_q;
@@ -104,6 +126,25 @@ module systolicforge_npu #(
     assign dma_ready = !busy;
     assign weight_load = (state_q == ST_LOAD_WEIGHTS);
     assign array_input_valid = (state_q == ST_STREAM);
+
+    always @* begin
+        a_last_address = {16'd0, instruction_a_base} +
+                         ({24'd0, instruction_m} - 32'd1) *
+                         {16'd0, instruction_lda} +
+                         ({24'd0, instruction_k} - 32'd1);
+        b_last_address = {16'd0, instruction_b_base} +
+                         ({24'd0, instruction_k} - 32'd1) *
+                         {16'd0, instruction_ldb} +
+                         ({24'd0, instruction_n} - 32'd1);
+        c_last_address = {16'd0, instruction_c_base} +
+                         ({24'd0, instruction_m} - 32'd1) *
+                         {16'd0, instruction_ldc} +
+                         ({24'd0, instruction_n} - 32'd1);
+        instruction_address_invalid = (a_last_address >= DEPTH) ||
+                                      (b_last_address >= DEPTH) ||
+                                      (c_last_address >= DEPTH);
+        pc_at_last_word = (pc_q == IMEM_DEPTH - 1);
+    end
 
     always @* begin
         dma_rdata = '0;
@@ -158,6 +199,7 @@ module systolicforge_npu #(
             busy         <= 1'b0;
             done         <= 1'b0;
             fault        <= 1'b0;
+            fault_code   <= FAULT_NONE;
             for (sequential_idx = 0; sequential_idx < ARRAY_COLS;
                  sequential_idx = sequential_idx + 1)
                 capture_row_q[sequential_idx] <= '0;
@@ -182,29 +224,53 @@ module systolicforge_npu #(
                         pc_q  <= '0;
                         busy  <= 1'b1;
                         fault <= 1'b0;
+                        fault_code <= FAULT_NONE;
                         state_q <= ST_FETCH;
                     end
                 end
 
                 ST_FETCH: begin
                     case (instruction[3:0])
-                        OP_NOP: pc_q <= pc_q + 1'b1;
+                        OP_NOP: begin
+                            if (pc_at_last_word) begin
+                                busy       <= 1'b0;
+                                done       <= 1'b1;
+                                fault      <= 1'b1;
+                                fault_code <= FAULT_PROGRAM_OVERRUN;
+                                state_q    <= ST_IDLE;
+                            end else begin
+                                pc_q <= pc_q + 1'b1;
+                            end
+                        end
 
                         OP_MATMUL: begin
-                            if ((instruction[15:8] == 0) ||
-                                (instruction[23:16] == 0) ||
-                                (instruction[31:24] == 0) ||
-                                (instruction[23:16] > ARRAY_ROWS) ||
-                                (instruction[31:24] > ARRAY_COLS)) begin
-                                busy    <= 1'b0;
-                                done    <= 1'b1;
-                                fault   <= 1'b1;
-                                state_q <= ST_IDLE;
+                            if ((instruction_m == 0) ||
+                                (instruction_k == 0) ||
+                                (instruction_n == 0) ||
+                                (instruction_k > ARRAY_ROWS) ||
+                                (instruction_n > ARRAY_COLS)) begin
+                                busy       <= 1'b0;
+                                done       <= 1'b1;
+                                fault      <= 1'b1;
+                                fault_code <= FAULT_ILLEGAL_DIMENSION;
+                                state_q    <= ST_IDLE;
+                            end else if (pc_at_last_word) begin
+                                busy       <= 1'b0;
+                                done       <= 1'b1;
+                                fault      <= 1'b1;
+                                fault_code <= FAULT_PROGRAM_OVERRUN;
+                                state_q    <= ST_IDLE;
+                            end else if (instruction_address_invalid) begin
+                                busy       <= 1'b0;
+                                done       <= 1'b1;
+                                fault      <= 1'b1;
+                                fault_code <= FAULT_ADDRESS_RANGE;
+                                state_q    <= ST_IDLE;
                             end else begin
                                 accumulate_q <= instruction[4];
-                                m_size_q     <= instruction[15:8];
-                                k_size_q     <= instruction[23:16];
-                                n_size_q     <= instruction[31:24];
+                                m_size_q     <= instruction_m;
+                                k_size_q     <= instruction_k;
+                                n_size_q     <= instruction_n;
                                 a_base_q     <= instruction[32 +: ADDR_W];
                                 b_base_q     <= instruction[48 +: ADDR_W];
                                 c_base_q     <= instruction[64 +: ADDR_W];
@@ -226,10 +292,11 @@ module systolicforge_npu #(
                         end
 
                         default: begin
-                            busy    <= 1'b0;
-                            done    <= 1'b1;
-                            fault   <= 1'b1;
-                            state_q <= ST_IDLE;
+                            busy       <= 1'b0;
+                            done       <= 1'b1;
+                            fault      <= 1'b1;
+                            fault_code <= FAULT_ILLEGAL_OPCODE;
+                            state_q    <= ST_IDLE;
                         end
                     endcase
                 end

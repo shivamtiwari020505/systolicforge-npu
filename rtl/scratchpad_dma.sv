@@ -18,6 +18,8 @@ module scratchpad_dma #(
     input  logic [LEN_W-1:0]         cmd_length,
     output logic                     busy,
     output logic                     done,
+    output logic                     fault,
+    output logic [3:0]               fault_code,
 
     output logic                     local_valid,
     input  logic                     local_ready,
@@ -36,6 +38,15 @@ module scratchpad_dma #(
     input  logic [DATA_W-1:0]        ext_rsp_rdata
 );
 
+    localparam integer BYTES_PER_WORD = DATA_W/8;
+    localparam logic [EXT_ADDR_W-1:0] ADDRESS_INCREMENT =
+        EXT_ADDR_W'(BYTES_PER_WORD);
+    localparam logic [1:0] MEM_C = 2'd2;
+    localparam logic [3:0] FAULT_NONE                 = 4'h0;
+    localparam logic [3:0] FAULT_DMA_INVALID_MEMORY   = 4'h5;
+    localparam logic [3:0] FAULT_DMA_LOCAL_RANGE      = 4'h6;
+    localparam logic [3:0] FAULT_DMA_EXTERNAL_ADDRESS = 4'h7;
+
     typedef enum logic [1:0] {
         DMA_IDLE,
         DMA_LOAD_REQ,
@@ -48,6 +59,23 @@ module scratchpad_dma #(
     logic [LOCAL_ADDR_W-1:0] local_addr_q;
     logic [EXT_ADDR_W-1:0] ext_addr_q;
     logic [LEN_W-1:0] remaining_q;
+
+    wire [63:0] cmd_local_extended =
+        {{(64-LOCAL_ADDR_W){1'b0}}, cmd_local_addr};
+    wire [63:0] cmd_ext_extended =
+        {{(64-EXT_ADDR_W){1'b0}}, cmd_ext_addr};
+    wire [63:0] cmd_length_extended =
+        {{(64-LEN_W){1'b0}}, cmd_length};
+    wire [63:0] local_limit = 64'd1 << LOCAL_ADDR_W;
+    wire [63:0] external_limit = 64'd1 << EXT_ADDR_W;
+    wire [63:0] local_end = cmd_local_extended + cmd_length_extended;
+    wire [63:0] external_end = cmd_ext_extended +
+                               cmd_length_extended * BYTES_PER_WORD;
+    wire local_range_invalid = (cmd_length != 0) &&
+                               (local_end > local_limit);
+    wire external_address_invalid = (cmd_length != 0) &&
+                                    ((external_end > external_limit) ||
+                                     ((cmd_ext_addr % BYTES_PER_WORD) != 0));
 
     assign cmd_ready = (state_q == DMA_IDLE) && local_ready;
     assign busy = (state_q != DMA_IDLE);
@@ -90,14 +118,30 @@ module scratchpad_dma #(
             ext_addr_q   <= '0;
             remaining_q  <= '0;
             done         <= 1'b0;
+            fault        <= 1'b0;
+            fault_code   <= FAULT_NONE;
         end else begin
             done <= 1'b0;
 
             case (state_q)
                 DMA_IDLE: begin
                     if (cmd_valid && cmd_ready) begin
-                        if (cmd_length == 0) begin
+                        fault      <= 1'b0;
+                        fault_code <= FAULT_NONE;
+                        if (cmd_mem > MEM_C) begin
+                            done       <= 1'b1;
+                            fault      <= 1'b1;
+                            fault_code <= FAULT_DMA_INVALID_MEMORY;
+                        end else if (cmd_length == 0) begin
                             done <= 1'b1;
+                        end else if (local_range_invalid) begin
+                            done       <= 1'b1;
+                            fault      <= 1'b1;
+                            fault_code <= FAULT_DMA_LOCAL_RANGE;
+                        end else if (external_address_invalid) begin
+                            done       <= 1'b1;
+                            fault      <= 1'b1;
+                            fault_code <= FAULT_DMA_EXTERNAL_ADDRESS;
                         end else begin
                             mem_q        <= cmd_mem;
                             local_addr_q <= cmd_local_addr;
@@ -122,7 +166,7 @@ module scratchpad_dma #(
                         end else begin
                             remaining_q  <= remaining_q - 1'b1;
                             local_addr_q <= local_addr_q + 1'b1;
-                            ext_addr_q   <= ext_addr_q + (DATA_W/8);
+                            ext_addr_q   <= ext_addr_q + ADDRESS_INCREMENT;
                             state_q      <= DMA_LOAD_REQ;
                         end
                     end
@@ -137,7 +181,7 @@ module scratchpad_dma #(
                         end else begin
                             remaining_q  <= remaining_q - 1'b1;
                             local_addr_q <= local_addr_q + 1'b1;
-                            ext_addr_q   <= ext_addr_q + (DATA_W/8);
+                            ext_addr_q   <= ext_addr_q + ADDRESS_INCREMENT;
                         end
                     end
                 end
