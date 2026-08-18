@@ -62,6 +62,7 @@ The local regression currently passes:
 | FPGA demo | Complete on-chip 8×8 self-test | PASS |
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |
+| Integrated SoC | DMA-loaded A/B through stalled external memory, compute arbitration, and DMA-stored 60-word C | PASS |
 | Generic synthesis | 64 PEs, structural check, synthesized-netlist simulation | PASS |
 | Xilinx-7 mapping | 64 array DSPs; 66 DSP48E1 cells including self-test | PASS |
 

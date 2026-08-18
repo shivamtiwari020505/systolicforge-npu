@@ -2,9 +2,9 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core npu dma fpga-demo compiled-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
+.PHONY: test core npu dma fpga-demo compiled-e2e soc-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core npu dma fpga-demo compiler compiled-e2e
+test: core npu dma fpga-demo compiler compiled-e2e soc-e2e
 
 build:
 	mkdir -p build
@@ -50,6 +50,15 @@ compiled-e2e: build
 		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
 		tb/tb_compiled_program.sv
 	vvp build/compiled_program.vvp
+
+soc-e2e: build
+	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_systolicforge_soc -o build/soc.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
+		tb/tb_systolicforge_soc.sv
+	vvp build/soc.vvp
 
 synth: build
 	$(YOSYS) -l build/yosys_synth.log -s synth/yosys_synth.ys

@@ -19,6 +19,7 @@ compute is idle.
 | Diagram block or path | Implemented evidence |
 |---|---|
 | SoC integration and compute/DMA exclusion | [`rtl/systolicforge_soc.sv`](../rtl/systolicforge_soc.sv#L41-L105) |
+| Compiler-to-external-memory integrated regression | [`tb/tb_systolicforge_soc.sv`](../tb/tb_systolicforge_soc.sv) |
 | Instruction memory, A/B/C scratchpads, and decoded tile registers | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L53-L79) |
 | Instruction decode and five-state sequencer | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L179-L253) |
 | Weight and activation address generation | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L120-L141) |

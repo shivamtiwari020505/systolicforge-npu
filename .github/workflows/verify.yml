@@ -48,6 +48,8 @@ jobs:
             rtl/systolic_array.sv rtl/systolicforge_npu.sv \
             tb/tb_compiled_program.sv
           vvp build/compiled_program.vvp
+      - name: Verify integrated compiler-DMA-SoC path
+        run: make soc-e2e
       - name: Verilator lint
         run: make lint
       - name: Generic synthesis and netlist simulation
