@@ -60,15 +60,17 @@ digraph SystolicForgeSystem {
     }
   }
 
-  host [label="Configuration / host\nprogram writes • start\nDMA commands • status", fillcolor="#f1f5f9"];
+  host [label="CPU / host software\nprogram image • DMA setup\ninterrupt handler", fillcolor="#f1f5f9"];
+  axi [label="systolicforge_axi_lite\n32-bit register bank\nWSTRB • SLVERR/DECERR • sticky IRQ", fillcolor="#ecfdf5", color="#059669"];
   extmem [label="External memory\n32-bit request/response", shape=cylinder, fillcolor="#fff7ed", color="#ea580c"];
 
   artifacts -> host [label="load"];
-  host -> imem [label="program_we / addr / data"];
-  host -> fsm [label="start", color="#0f766e"];
-  fsm -> host [label="busy / done / fault_code", color="#0f766e"];
-  host -> dma [label="DMA command"];
-  dma -> host [label="ready / busy / done / fault_code"];
+  host -> axi [dir=both, label="AXI4-Lite\n+ irq", color="#059669"];
+  axi -> imem [label="program_we / addr / data"];
+  axi -> fsm [label="start", color="#0f766e"];
+  fsm -> axi [label="busy / done / fault_code", color="#0f766e"];
+  axi -> dma [label="DMA command"];
+  dma -> axi [label="ready / busy / done / fault_code"];
   extmem -> dma [dir=both, label="valid / ready\nread response"];
   dma -> sp_a [dir=both, label="local port when !busy"];
   dma -> sp_b [dir=both];

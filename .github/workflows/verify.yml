@@ -33,6 +33,8 @@ jobs:
           vvp build/dma.vvp
       - name: Verify fault reporting and bounds checks
         run: make faults
+      - name: Verify AXI4-Lite host integration
+        run: make axi-lite
       - name: Verify FPGA self-test wrapper
         run: |
           iverilog -g2012 -Wall -s tb_fpga_demo -o build/fpga_demo.vvp \

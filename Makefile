@@ -2,9 +2,9 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core npu dma faults fpga-demo compiled-e2e soc-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
+.PHONY: test core npu dma faults axi-lite fpga-demo compiled-e2e soc-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core npu dma faults fpga-demo compiler compiled-e2e soc-e2e
+test: core npu dma faults axi-lite fpga-demo compiler compiled-e2e soc-e2e
 
 build:
 	mkdir -p build
@@ -34,6 +34,14 @@ faults: build
 		tb/tb_fault_reporting.sv
 	vvp build/faults.vvp
 
+axi-lite: build
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_systolicforge_axi_lite -o build/axi_lite.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
+		rtl/systolicforge_axi_lite.sv tb/tb_systolicforge_axi_lite.sv
+	vvp build/axi_lite.vvp
+
 fpga-demo: build
 	iverilog -g2012 -Wall -s tb_fpga_demo -o build/fpga_demo.vvp \
 		rtl/systolic_pe.sv rtl/systolic_array.sv \
@@ -50,6 +58,12 @@ lint:
 		--top-module systolicforge_soc \
 		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv
+	verilator --lint-only --timing -Wall \
+		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL \
+		--top-module systolicforge_axi_lite \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
+		rtl/systolicforge_axi_lite.sv
 
 compiled-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program

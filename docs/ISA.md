@@ -88,6 +88,10 @@ corresponding completion signal without entering busy or performing memory
 side effects. At the integrated SoC output, an NPU code has priority if both
 subsystems retain a fault.
 
+The AXI4-Lite wrapper exposes this summary and code in its `STATUS` register and
+retains completion/fault causes in write-one-to-clear interrupt status. See
+[`HOST_INTERFACE.md`](HOST_INTERFACE.md) for the register contract.
+
 ## Example tiling
 
 For M=3, K=10, N=10 on an 8×8 array, the compiler emits four MATMULs:

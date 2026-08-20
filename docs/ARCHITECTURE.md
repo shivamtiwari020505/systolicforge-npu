@@ -8,16 +8,19 @@ features are not shown as implemented blocks.
 
 ![SystolicForge system architecture](diagrams/system_architecture.svg)
 
-The top-level hardware integration is `systolicforge_soc`. It connects the
-external request/response interface to `scratchpad_dma`, then connects the DMA's
-local port to `systolicforge_npu`. Compute start is accepted only while the DMA
-is idle, and the NPU exposes its scratchpad configuration port only while
-compute is idle.
+The host-facing integration is `systolicforge_axi_lite`, a 32-bit AXI4-Lite
+register wrapper around `systolicforge_soc`. The SoC connects the external
+request/response interface to `scratchpad_dma`, then connects the DMA's local
+port to `systolicforge_npu`. Compute start is accepted only while the DMA is
+idle, and the NPU exposes its scratchpad configuration port only while compute
+is idle.
 
 ### RTL and software anchors
 
 | Diagram block or path | Implemented evidence |
 |---|---|
+| AXI4-Lite register bank, command responses, and interrupt retention | [`rtl/systolicforge_axi_lite.sv`](../rtl/systolicforge_axi_lite.sv) |
+| Host-driven program/DMA/compute regression | [`tb/tb_systolicforge_axi_lite.sv`](../tb/tb_systolicforge_axi_lite.sv) |
 | SoC integration and compute/DMA exclusion | [`rtl/systolicforge_soc.sv`](../rtl/systolicforge_soc.sv#L41-L105) |
 | Compiler-to-external-memory integrated regression | [`tb/tb_systolicforge_soc.sv`](../tb/tb_systolicforge_soc.sv) |
 | Instruction memory, A/B/C scratchpads, and decoded tile registers | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L53-L79) |
@@ -27,9 +30,25 @@ compute is idle.
 | Burst DMA ready/valid state machine | [`rtl/scratchpad_dma.sv`](../rtl/scratchpad_dma.sv#L39-L146) |
 | Quantization, M/K/N tiling, and instruction emission | [`compiler/systolicforge_compile.py`](../compiler/systolicforge_compile.py) |
 
-The instruction configuration port is intentionally separate from the data DMA.
-It can be replaced by AXI-Lite, APB, or a boot ROM in a board-specific wrapper
-without changing the compute datapath.
+The instruction configuration port remains separate from the data DMA inside
+the SoC. The AXI4-Lite wrapper stages four 32-bit words before committing one
+128-bit instruction, so adding the host boundary does not change the compute
+datapath or ISA.
+
+## AXI4-Lite host boundary
+
+The wrapper accepts independent AXI AW and W channels in either order and keeps
+at most one read and one write response outstanding. It exposes identity,
+status, program staging, DMA staging, and interrupt registers. Unmapped or
+unaligned accesses return `DECERR`; writes to read-only registers and commands
+that cannot be accepted return `SLVERR` instead of being silently discarded.
+
+Compute and DMA completion pulses set sticky interrupt bits. The fault
+interrupt reflects a live retained hardware condition, so a write-one-to-clear
+cannot hide an active NPU or DMA fault. Software recovers the underlying engine
+first, then clears the interrupt status. The full register map, access rules,
+driver sequence, and C constants are in [`HOST_INTERFACE.md`](HOST_INTERFACE.md)
+and [`include/systolicforge_regs.h`](../include/systolicforge_regs.h).
 
 ## Systolic-array microarchitecture
 

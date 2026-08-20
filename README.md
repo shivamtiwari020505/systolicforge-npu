@@ -6,7 +6,8 @@
 SystolicForge is an open, from-scratch INT8 matrix accelerator spanning RTL,
 compiler, FPGA, and ASIC exploration flows. It combines a parameterized
 weight-stationary systolic array with a programmable mini-NPU, burst DMA,
-strided scratchpads, and a dependency-free MatMul compiler.
+strided scratchpads, a host-facing AXI4-Lite control plane, and a
+dependency-free MatMul compiler.
 
 The default compute engine is **8×8**: 64 signed INT8 MACs operate every cycle
 once the wavefront is full. `ROWS` and `COLS` are parameters, so the same RTL can
@@ -18,6 +19,7 @@ be elaborated as a 16×16 array when the target has enough resources.
 | Default compute | 8×8 array, 64 MAC/cycle |
 | Peak datapath rate | 12.8 GOPS at 100 MHz, counting multiply and add separately (theoretical) |
 | Programming model | 128-bit `NOP` / tiled `MATMUL` / `HALT` instruction stream |
+| Host integration | 32-bit AXI4-Lite registers, command error responses, sticky interrupt status |
 | End-to-end path | JSON or optional ONNX → compiler images → self-checking RTL execution |
 | Reproducible evidence | Icarus, Verilator, Yosys, and Graphviz exercised by CI |
 
@@ -33,7 +35,8 @@ tool milestones, so this repository does not claim those results yet.
 Every block in this diagram maps to committed RTL or compiler code. See the
 [architecture and microarchitecture walkthrough](docs/ARCHITECTURE.md) for RTL
 anchors, the PE-array dataflow, controller behavior, and simulation-derived
-timing diagrams.
+timing diagrams. The software-visible register contract is in the
+[AXI4-Lite host-interface guide](docs/HOST_INTERFACE.md).
 
 ## What is implemented
 
@@ -45,6 +48,8 @@ timing diagrams.
 - A/B/C scratchpads, K-tile accumulation, an instruction sequencer, structured
   fault codes, and hardware bounds checks before memory side effects.
 - A word-burst DMA with external valid/ready read and write channels.
+- A 32-bit AXI4-Lite wrapper for program loading, DMA/compute commands,
+  structured status, and interrupts.
 - A dependency-free JSON compiler plus an optional ONNX frontend.
 - A Basys3 self-test top, XDC, and non-project Vivado build script.
 - OpenLane 2 and OpenROAD-flow-scripts configurations for Sky130.
@@ -60,6 +65,7 @@ The local regression currently passes:
 | Mini-NPU | A=3x6 and B=6x3 on a physical 4x4 array; K split 4+2, accumulation, strides | PASS |
 | DMA | Five-word external→local and local→external bursts | PASS |
 | Fault safety | Opcode, dimension, PC, scratchpad, DMA selector/range, no-op, and recovery cases | PASS |
+| AXI4-Lite host path | Independent AW/W ordering, byte strobes, program/DMA/compute flow, errors, IRQs | PASS |
 | FPGA demo | Complete on-chip 8×8 self-test | PASS |
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |
@@ -155,6 +161,7 @@ generate those reports on a machine with the corresponding tools installed.
 rtl/        PE, systolic array, mini-NPU, DMA, integrated SoC
 tb/         self-checking SystemVerilog testbenches
 compiler/   MatMul frontend, quantizer, tiler, encoder
+include/    software-visible AXI4-Lite register definitions
 examples/   example graph
 fpga/       Basys3 wrapper, constraints, Vivado flow
 pd/         Sky130 constraints and OpenLane/OpenROAD configs
