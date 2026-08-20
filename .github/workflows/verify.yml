@@ -19,6 +19,8 @@ jobs:
           iverilog -g2012 -Wall -s tb_systolic_array -o build/core.vvp \
             rtl/systolic_pe.sv rtl/systolic_array.sv tb/tb_systolic_array.sv
           vvp build/core.vvp
+      - name: Verify array zero and accumulator-wrap edge cases
+        run: make array-edges
       - name: Verify mini-NPU
         run: |
           iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
@@ -54,6 +56,8 @@ jobs:
           vvp build/compiled_program.vvp
       - name: Verify integrated compiler-DMA-SoC path
         run: make soc-e2e
+      - name: Run randomized Python-versus-RTL differential regression
+        run: make random-diff
       - name: Verilator lint
         run: make lint
       - name: Generic synthesis and netlist simulation

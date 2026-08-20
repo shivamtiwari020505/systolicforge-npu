@@ -9,6 +9,13 @@ weight-stationary systolic array with a programmable mini-NPU, burst DMA,
 strided scratchpads, a host-facing AXI4-Lite control plane, and a
 dependency-free MatMul compiler.
 
+> **Active project focus:** SystolicForge is currently being completed as an
+> academic and interview portfolio project. Work is prioritized around a
+> reproducible end-to-end implementation, FPGA evidence, a board demonstration,
+> and clear technical documentation. Commercial productization is not part of
+> the active completion scope. See the
+> [academic and interview project roadmap](docs/PROJECT_ROADMAP.md).
+
 The default compute engine is **8×8**: 64 signed INT8 MACs operate every cycle
 once the wavefront is full. `ROWS` and `COLS` are parameters, so the same RTL can
 be elaborated as a 16×16 array when the target has enough resources.
@@ -23,8 +30,9 @@ be elaborated as a 16×16 array when the target has enough resources.
 | End-to-end path | JSON or optional ONNX → compiler images → self-checking RTL execution |
 | Reproducible evidence | Icarus, Verilator, Yosys, and Graphviz exercised by CI |
 
-**Project status:** the RTL regressions, compiler-to-RTL flow, lint, generic
-netlist simulation, and Xilinx-7 resource mapping are reproducible and passing.
+**Project status:** the directed and randomized RTL regressions,
+compiler-to-RTL flow, lint, generic netlist simulation, and Xilinx-7 resource
+mapping are reproducible and passing.
 Routed Basys3 timing/bitstream evidence and Sky130 post-route PPA remain external
 tool milestones, so this repository does not claim those results yet.
 
@@ -62,10 +70,12 @@ The local regression currently passes:
 | Test | Coverage | Result |
 |---|---|---:|
 | Systolic core | A=6x4 and B=4x4 on a physical 4x4 array; signed values, lane order, input bubble | PASS |
+| Array arithmetic edges | Zero activations with nonzero weights; forced signed accumulator wrap in a 4x4/INT16 verification configuration | PASS |
 | Mini-NPU | A=3x6 and B=6x3 on a physical 4x4 array; K split 4+2, accumulation, strides | PASS |
 | DMA | Five-word external→local and local→external bursts | PASS |
 | Fault safety | Opcode, dimension, PC, scratchpad, DMA selector/range, no-op, and recovery cases | PASS |
 | AXI4-Lite host path | Independent AW/W ordering, byte strobes, program/DMA/compute flow, errors, IRQs | PASS |
+| Randomized differential | Seeded signed shapes, partial K/N tiles, accumulation, padded strides, boundary values, and memory stalls against Python | PASS |
 | FPGA demo | Complete on-chip 8×8 self-test | PASS |
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |
@@ -92,6 +102,21 @@ Or on Linux/macOS with Icarus Verilog:
 ```sh
 make test
 ```
+
+Run or reproduce the randomized differential regression directly:
+
+```sh
+python scripts/run_randomized_differential.py --seed 0x5f2026d1 --cases 16
+# Replay one failing case exactly:
+python scripts/run_randomized_differential.py --seed <seed> --case-index <index>
+```
+
+Each case records its matrices, strided program, Python golden output, RTL log,
+and seed under `build/randomized_differential/`. Failure artifacts are retained
+and the harness prints the exact replay command. The harness uses the 4×4
+verification configuration so compact test matrices frequently cross K/N tile
+boundaries; the directed integrated-SoC and FPGA regressions retain coverage of
+the default 8×8 configuration.
 
 With Yosys installed:
 

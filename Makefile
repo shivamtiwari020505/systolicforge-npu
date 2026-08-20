@@ -2,9 +2,9 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core npu dma faults axi-lite fpga-demo compiled-e2e soc-e2e compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
+.PHONY: test core array-edges npu dma faults axi-lite fpga-demo compiled-e2e soc-e2e random-diff compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core npu dma faults axi-lite fpga-demo compiler compiled-e2e soc-e2e
+test: core array-edges npu dma faults axi-lite fpga-demo compiler compiled-e2e soc-e2e random-diff
 
 build:
 	mkdir -p build
@@ -13,6 +13,12 @@ core: build
 	iverilog -g2012 -Wall -s tb_systolic_array -o build/core.vvp \
 		rtl/systolic_pe.sv rtl/systolic_array.sv tb/tb_systolic_array.sv
 	vvp build/core.vvp
+
+array-edges: build
+	iverilog -g2012 -Wall -s tb_systolic_array_arithmetic_edges \
+		-o build/array_edges.vvp rtl/systolic_pe.sv rtl/systolic_array.sv \
+		tb/tb_systolic_array_arithmetic_edges.sv
+	vvp build/array_edges.vvp
 
 npu: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
@@ -81,6 +87,9 @@ soc-e2e: build
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_systolicforge_soc.sv
 	vvp build/soc.vvp
+
+random-diff: build
+	$(PYTHON) scripts/run_randomized_differential.py
 
 synth: build
 	$(YOSYS) -l build/yosys_synth.log -s synth/yosys_synth.ys

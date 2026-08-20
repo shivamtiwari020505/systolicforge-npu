@@ -71,7 +71,11 @@ Each PE has three registered paths:
 
 Top-row PEs start a new reduction with their product. Every lower PE requires
 both activation-valid and partial-sum-valid before adding. Arithmetic wraps on
-signed 32-bit overflow; the current RTL does not saturate.
+signed overflow; the current RTL does not saturate. The dedicated array edge
+regression uses a verification-only 16-bit accumulator so a 4x4 reduction of
+`127 * 127` reaches 64516 and must wrap to `16'hfc04` (`-1020`). It also checks
+zero activations against nonzero weights. Production/default configurations
+retain signed 32-bit accumulation.
 
 ### Logical matrices versus the physical PE array
 
