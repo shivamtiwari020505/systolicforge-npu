@@ -53,27 +53,35 @@ Command:
 make synth-xc7
 ```
 
-The complete `systolicforge_fpga_demo`, including the 8×8 array and on-chip
-self-checker, maps to:
+The mapping was rerun on 2026-08-26 for `systolicforge_fpga_uart_demo`. This top
+contains the 8×8 array, compact ISA-compatible FPGA execution engine, 16-word
+instruction memory, 128-word A/B/C scratchpads, UART RX/TX and command parser,
+and the shared-engine button self-test. It maps to:
 
 | Xilinx primitive | Count |
 |---|---:|
-| `DSP48E1` | 66 |
-| `FDCE` | 3,338 |
-| `CARRY4` | 63 |
-| LUT2 | 77 |
-| LUT3 | 10 |
-| LUT4 | 5 |
-| LUT5 | 52 |
-| LUT6 | 122 |
-| `MUXF7` | 69 |
-| `MUXF8` | 29 |
+| `DSP48E1` | 72 |
+| `FDCE` | 3,733 |
+| `FDRE` | 8,720 |
+| `FDPE` | 5 |
+| `CARRY4` | 114 |
+| LUT1 | 349 |
+| LUT2 | 1,475 |
+| LUT3 | 867 |
+| LUT4 | 870 |
+| LUT5 | 473 |
+| LUT6 | 3,987 |
+| `MUXF7` | 3,178 |
+| `MUXF8` | 1,226 |
 | `BUFG` | 1 |
 
-Each of the 64 PEs maps to one DSP48E1. The two additional DSPs implement
-self-test comparison arithmetic and are not part of the compute array. The
-Basys3 XC7A35T provides 90 DSP slices, making the complete mapping 73.3% of
-available DSP resources.
+Each of the 64 PEs maps to one DSP48E1. Eight additional DSPs implement address
+arithmetic and self-test checking; they are not extra MAC lanes. The Basys3
+XC7A35T provides 90 DSP slices, so this mapping uses 80.0% of available DSPs.
+The mapping contains 8,021 LUT1–LUT6 primitives and 12,458 flip-flops in total,
+both below the device's raw logic capacity. Yosys implements the compact
+scratchpads as registers and muxes in this run; serializing their compute-side
+reads is what keeps that cost bounded.
 
 `check -assert` reported zero problems. These are pre-place resource estimates;
 the Vivado flow remains the authority for packed LUT/slice utilization, clock

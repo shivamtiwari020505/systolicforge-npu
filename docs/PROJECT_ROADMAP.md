@@ -26,19 +26,26 @@ established baseline. The active completion sequence is:
 | 1. Integrated SoC testbench | Complete | The compiler-generated program DMA-loads A/B through a stalled external-memory model, executes, DMA-stores C, and checks every result plus arbitration behavior. |
 | 2. Robust error handling | Complete | Structured faults and negative tests cover invalid opcodes/dimensions, address and program bounds, DMA selector/range errors, no-op commands, busy arbitration, and recovery. |
 | 3. Randomized differential verification | **Complete** | A deterministic Python harness generates signed shapes, partial K/N tiles, K accumulation, padded strides, boundary values, and seeded memory stalls; the integrated SoC result is checked against the Python golden model. The default 16-case seed, an independent 16-case seed, and a 64-case stress seed pass. |
-| 4. Host-programmable FPGA demo | **Next** | Add a UART loader for instructions and matrix data, and return results/status over UART while retaining the button-driven self-test. |
-| 5. Real FPGA evidence | Pending | Run both Vivado flows, review routed timing/utilization/DRC/power, generate the bitstream, program Basys3, and capture a concise demonstration. |
+| 4. Host-programmable FPGA demo | **Complete** | A 115200 8N1 loader programs instructions and A/B/C data, starts the compact ISA-compatible FPGA engine, and returns status/results. The compiler-generated five-word example matches all 60 golden outputs in the engine regression; a bit-level UART regression covers request/response framing, busy arbitration, signed execution, result readback, invalid requests, and the retained shared-engine button self-test. |
+| 5. Real FPGA evidence | **Next** | Run both Vivado flows, review routed timing/utilization/DRC/power, generate the bitstream, program Basys3, run both button and host-driven demonstrations, and archive the reports plus concise board evidence. |
 | 6. ASIC implementation evidence | Pending | Run the Sky130 OpenLane/OpenROAD flow and publish reproducible area, timing, power, DRC, and LVS evidence with exact tool versions. |
 | 7. First stable release | Pending | Create `v0.1.0` after the integrated regressions pass, including an archive, checksums, known limitations, supported configurations, and reproduction commands. |
 
-The completed AXI4-Lite control wrapper is a useful host-integration enhancement,
-but it does not replace step 4's board-accessible UART loader.
+The AXI4-Lite control wrapper remains the general SoC host boundary. The
+resource-bounded Basys3 path uses the same ISA and compiler contract but
+serializes scratchpad reads in an FPGA-specific execution engine; this avoids
+the general NPU's multi-port scratchpad mux cost while retaining the 8×8 array.
 
 ## Current work
 
-Step 3 is implemented and passing. The next implementation milestone is
-**step 4: host-programmable FPGA demo**. A failure from the randomized suite can
-be replayed exactly with:
+Steps 1–4 are implemented and passing. The next milestone is **step 5: real
+FPGA evidence**. Run the supplied non-project Vivado flows, preserve their
+reports without suppressing warnings, and validate both the button self-test
+and `scripts/systolicforge_uart_host.py` on a physical Basys3. The repository
+does not claim routed closure, bitstream success, or board operation until that
+evidence is archived.
+
+A failure from the randomized suite can still be replayed exactly with:
 
 ```sh
 python scripts/run_randomized_differential.py --seed <seed> --case-index <index>

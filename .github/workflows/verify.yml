@@ -43,6 +43,8 @@ jobs:
             rtl/systolic_pe.sv rtl/systolic_array.sv \
             fpga/common/systolicforge_fpga_demo.sv tb/tb_fpga_demo.sv
           vvp build/fpga_demo.vvp
+      - name: Verify UART-programmable FPGA demo
+        run: make fpga-engine fpga-uart-demo
       - name: Verify compiler
         run: python -m unittest discover -s tests -v
       - name: Verify compiler-to-RTL path

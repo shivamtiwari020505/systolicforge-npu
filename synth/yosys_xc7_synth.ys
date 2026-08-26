@@ -1,9 +1,12 @@
 read_verilog -sv rtl/systolic_pe.sv
 read_verilog -sv rtl/systolic_array.sv
-read_verilog -sv fpga/common/systolicforge_fpga_demo.sv
-hierarchy -check -top systolicforge_fpga_demo
-synth_xilinx -family xc7 -top systolicforge_fpga_demo
+read_verilog -sv fpga/common/systolicforge_fpga_engine.sv
+read_verilog -sv fpga/common/systolicforge_uart_rx.sv
+read_verilog -sv fpga/common/systolicforge_uart_tx.sv
+read_verilog -sv fpga/common/systolicforge_fpga_uart_demo.sv
+hierarchy -check -top systolicforge_fpga_uart_demo
+synth_xilinx -family xc7 -top systolicforge_fpga_uart_demo
 check -assert
-stat -top systolicforge_fpga_demo
+stat -top systolicforge_fpga_uart_demo
 write_json build/systolicforge_basys3_yosys.json
 write_verilog -noattr build/systolicforge_basys3_netlist.v

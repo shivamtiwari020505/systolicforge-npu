@@ -15,12 +15,23 @@ port to `systolicforge_npu`. Compute start is accepted only while the DMA is
 idle, and the NPU exposes its scratchpad configuration port only while compute
 is idle.
 
+For the Basys3 demonstration, `systolicforge_fpga_uart_demo` combines the UART
+command parser with `systolicforge_fpga_engine`. The board engine implements the
+same NOP/MATMUL/HALT instruction fields, scratchpad programming contract,
+tiling, accumulation, and faults, but serializes A/B reads into tile registers.
+This keeps the 8×8 compute datapath while avoiding the general NPU's large
+asynchronous multi-port scratchpad muxes on the small FPGA.
+
 ### RTL and software anchors
 
 | Diagram block or path | Implemented evidence |
 |---|---|
 | AXI4-Lite register bank, command responses, and interrupt retention | [`rtl/systolicforge_axi_lite.sv`](../rtl/systolicforge_axi_lite.sv) |
 | Host-driven program/DMA/compute regression | [`tb/tb_systolicforge_axi_lite.sv`](../tb/tb_systolicforge_axi_lite.sv) |
+| Basys3 UART parser, shared-engine self-test, and LED status | [`fpga/common/systolicforge_fpga_uart_demo.sv`](../fpga/common/systolicforge_fpga_uart_demo.sv) |
+| FPGA-oriented ISA engine with serialized scratchpad reads | [`fpga/common/systolicforge_fpga_engine.sv`](../fpga/common/systolicforge_fpga_engine.sv) |
+| Bit-level UART program/execute/result regression | [`tb/tb_fpga_uart_demo.sv`](../tb/tb_fpga_uart_demo.sv) |
+| Board host client and compiler upload path | [`scripts/systolicforge_uart_host.py`](../scripts/systolicforge_uart_host.py) |
 | SoC integration and compute/DMA exclusion | [`rtl/systolicforge_soc.sv`](../rtl/systolicforge_soc.sv#L41-L105) |
 | Compiler-to-external-memory integrated regression | [`tb/tb_systolicforge_soc.sv`](../tb/tb_systolicforge_soc.sv) |
 | Instruction memory, A/B/C scratchpads, and decoded tile registers | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L53-L79) |
@@ -49,6 +60,31 @@ cannot hide an active NPU or DMA fault. Software recovers the underlying engine
 first, then clears the interrupt status. The full register map, access rules,
 driver sequence, and C constants are in [`HOST_INTERFACE.md`](HOST_INTERFACE.md)
 and [`include/systolicforge_regs.h`](../include/systolicforge_regs.h).
+
+## Basys3 UART boundary
+
+The board top has one engine owner at a time. UART commands can write
+instructions and A/B/C words, start execution, and read status/results while
+the engine is idle.
+The retained BTNC self-test uses the same ports to load a deterministic 8×8
+program and verify all 64 results. Commands with side effects return `busy`
+while compute or the button test owns the engine; PING and STATUS remain
+available.
+
+The UART uses fixed command payloads and fixed six-byte responses, so the RTL
+does not need packet buffering, a checksum engine, or a soft CPU. A two-flop
+synchronizer precedes the 8N1 receiver, framing and command errors are sticky,
+and the host sends only one outstanding request. The full byte layout and the
+compact board memory configuration are in [`UART_PROTOCOL.md`](UART_PROTOCOL.md).
+
+The board engine prefetches one 8×8 B tile over 64 cycles and one A row over
+eight cycles before pulsing the array input. Issuing rows nine cycles apart
+guarantees at most one active output column per cycle, allowing a single C
+scratchpad write port. This is intentionally lower throughput than
+`systolicforge_npu`; it is a resource tradeoff at the demonstration boundary,
+not a change to the ISA or PE array. The compiler-generated 6×10 example still
+executes as four tiled MATMUL instructions plus HALT and matches all 60 golden
+outputs in the FPGA-engine regression.
 
 ## Systolic-array microarchitecture
 

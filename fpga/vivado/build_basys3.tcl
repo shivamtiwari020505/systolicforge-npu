@@ -1,13 +1,13 @@
-# Vivado non-project-mode implementation for the Basys3 hardware self-test.
+# Vivado non-project-mode implementation for the UART-programmable Basys3 demo.
 #
-# Scope: 8x8 systolic array plus the on-chip demonstration controller/checker.
-# This is not synthesis of the complete mini-NPU, scratchpads, or DMA. Use
-# synth_npu_ooc.tcl for whole-NPU synthesis evidence.
+# Scope: 8x8 ISA-compatible FPGA engine, compact on-chip scratchpads, UART host
+# bridge, and the retained button-driven numerical self-test. Use
+# synth_npu_ooc.tcl for separate default-depth whole-SoC synthesis evidence.
 
 set script_dir [file dirname [file normalize [info script]]]
 set repo_root  [file normalize [file join $script_dir ../..]]
 set build_dir  [file join $repo_root build vivado_basys3]
-set top_name   systolicforge_fpga_demo
+set top_name   systolicforge_fpga_uart_demo
 set part_name  xc7a35tcpg236-1
 
 file mkdir $build_dir
@@ -15,7 +15,10 @@ file mkdir $build_dir
 set rtl_files [list \
     [file join $repo_root rtl systolic_pe.sv] \
     [file join $repo_root rtl systolic_array.sv] \
-    [file join $repo_root fpga common systolicforge_fpga_demo.sv]]
+    [file join $repo_root fpga common systolicforge_fpga_engine.sv] \
+    [file join $repo_root fpga common systolicforge_uart_rx.sv] \
+    [file join $repo_root fpga common systolicforge_uart_tx.sv] \
+    [file join $repo_root fpga common systolicforge_fpga_uart_demo.sv]]
 
 foreach rtl_file $rtl_files {
     if {![file exists $rtl_file]} {
@@ -30,8 +33,8 @@ if {![file exists $constraint_file]} {
 }
 read_xdc $constraint_file
 
-puts "INFO: Implementing SystolicForge Basys3 array self-test"
-puts "INFO: Top=$top_name Part=$part_name Configuration=8x8 INT8/INT32"
+puts "INFO: Implementing SystolicForge UART-programmable Basys3 demo"
+puts "INFO: Top=$top_name Part=$part_name Configuration=8x8 INT8/INT32, 115200 baud"
 
 synth_design \
     -top $top_name \
@@ -98,7 +101,7 @@ set route_wns [get_property SLACK $worst_path]
 
 set manifest_path [file join $build_dir build_manifest.txt]
 set manifest [open $manifest_path w]
-puts $manifest "flow=basys3_array_self_test_implementation"
+puts $manifest "flow=basys3_uart_engine_implementation"
 puts $manifest "top=$top_name"
 puts $manifest "part=$part_name"
 puts $manifest "board=Digilent_Basys3"
@@ -106,6 +109,11 @@ puts $manifest "array_rows=8"
 puts $manifest "array_cols=8"
 puts $manifest "data_width=8"
 puts $manifest "accumulator_width=32"
+puts $manifest "execution_engine=serialized_scratchpad_prefetch"
+puts $manifest "scratchpad_words_per_memory=128"
+puts $manifest "instruction_words=16"
+puts $manifest "uart_format=115200_8N1"
+puts $manifest "uart_clocks_per_bit=868"
 puts $manifest "clock_period_ns=10.000"
 puts $manifest "route_wns_ns=$route_wns"
 puts $manifest "power_method=vectorless_estimate"

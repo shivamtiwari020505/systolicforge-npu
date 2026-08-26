@@ -4,7 +4,13 @@ module tb_compiled_program;
 
     localparam integer ARRAY_ROWS = 8;
     localparam integer ARRAY_COLS = 8;
+`ifdef FPGA_ENGINE
+    localparam integer ADDR_W = 7;
+    localparam integer MAX_EXECUTION_CYCLES = 1000;
+`else
     localparam integer ADDR_W = 8;
+    localparam integer MAX_EXECUTION_CYCLES = 500;
+`endif
     localparam integer IMEM_DEPTH = 16;
     localparam integer M = 6;
     localparam integer K = 10;
@@ -40,7 +46,11 @@ module tb_compiled_program;
     integer signed actual;
     integer signed expected;
 
+`ifdef FPGA_ENGINE
+    systolicforge_fpga_engine #(
+`else
     systolicforge_npu #(
+`endif
         .ARRAY_ROWS(ARRAY_ROWS),
         .ARRAY_COLS(ARRAY_COLS),
         .ADDR_W(ADDR_W),
@@ -132,7 +142,7 @@ module tb_compiled_program;
         start = 1'b0;
 
         cycles = 0;
-        while (!done && cycles < 500) begin
+        while (!done && cycles < MAX_EXECUTION_CYCLES) begin
             @(negedge clk);
             cycles = cycles + 1;
         end

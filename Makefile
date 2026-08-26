@@ -2,9 +2,9 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core array-edges npu dma faults axi-lite fpga-demo compiled-e2e soc-e2e random-diff compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
+.PHONY: test core array-edges npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiled-e2e soc-e2e random-diff compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core array-edges npu dma faults axi-lite fpga-demo compiler compiled-e2e soc-e2e random-diff
+test: core array-edges npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiler compiled-e2e soc-e2e random-diff
 
 build:
 	mkdir -p build
@@ -54,6 +54,26 @@ fpga-demo: build
 		fpga/common/systolicforge_fpga_demo.sv tb/tb_fpga_demo.sv
 	vvp build/fpga_demo.vvp
 
+fpga-engine: build
+	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json \
+		-o build/example_program --array-rows 8 --array-cols 8 \
+		--scratchpad-depth 128 --imem-depth 16
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DFPGA_ENGINE \
+		-s tb_compiled_program -o build/fpga_engine.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv \
+		fpga/common/systolicforge_fpga_engine.sv tb/tb_compiled_program.sv
+	vvp build/fpga_engine.vvp
+
+fpga-uart-demo: build
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_fpga_uart_demo -o build/fpga_uart_demo.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv \
+		fpga/common/systolicforge_fpga_engine.sv \
+		fpga/common/systolicforge_uart_rx.sv \
+		fpga/common/systolicforge_uart_tx.sv \
+		fpga/common/systolicforge_fpga_uart_demo.sv tb/tb_fpga_uart_demo.sv
+	vvp build/fpga_uart_demo.vvp
+
 compiler:
 	$(PYTHON) -m unittest discover -s tests -v
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
@@ -70,6 +90,14 @@ lint:
 		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		rtl/systolicforge_axi_lite.sv
+	verilator --lint-only --timing -Wall \
+		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		--top-module systolicforge_fpga_uart_demo \
+		rtl/systolic_pe.sv rtl/systolic_array.sv \
+		fpga/common/systolicforge_fpga_engine.sv \
+		fpga/common/systolicforge_uart_rx.sv \
+		fpga/common/systolicforge_uart_tx.sv \
+		fpga/common/systolicforge_fpga_uart_demo.sv
 
 compiled-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program

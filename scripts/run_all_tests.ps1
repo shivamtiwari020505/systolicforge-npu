@@ -7,6 +7,8 @@ $ErrorActionPreference = "Stop"
 & (Join-Path $PSScriptRoot "run_fault_sim.ps1")
 & (Join-Path $PSScriptRoot "run_axi_lite_sim.ps1")
 & (Join-Path $PSScriptRoot "run_fpga_demo_sim.ps1")
+& (Join-Path $PSScriptRoot "run_fpga_engine_sim.ps1")
+& (Join-Path $PSScriptRoot "run_fpga_uart_demo_sim.ps1")
 & (Join-Path $PSScriptRoot "run_compiled_program_sim.ps1")
 & (Join-Path $PSScriptRoot "run_soc_sim.ps1")
 & (Join-Path $PSScriptRoot "run_randomized_differential.ps1")

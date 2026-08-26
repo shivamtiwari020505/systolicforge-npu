@@ -26,13 +26,13 @@ be elaborated as a 16×16 array when the target has enough resources.
 | Default compute | 8×8 array, 64 MAC/cycle |
 | Peak datapath rate | 12.8 GOPS at 100 MHz, counting multiply and add separately (theoretical) |
 | Programming model | 128-bit `NOP` / tiled `MATMUL` / `HALT` instruction stream |
-| Host integration | 32-bit AXI4-Lite registers, command error responses, sticky interrupt status |
+| Host integration | 32-bit AXI4-Lite registers plus a Basys3 USB-UART loader and Python host utility |
 | End-to-end path | JSON or optional ONNX → compiler images → self-checking RTL execution |
 | Reproducible evidence | Icarus, Verilator, Yosys, and Graphviz exercised by CI |
 
 **Project status:** the directed and randomized RTL regressions,
-compiler-to-RTL flow, lint, generic netlist simulation, and Xilinx-7 resource
-mapping are reproducible and passing.
+compiler-to-RTL flow, UART-programmable FPGA regression, lint, generic netlist
+simulation, and Xilinx-7 resource mapping are reproducible and passing.
 Routed Basys3 timing/bitstream evidence and Sky130 post-route PPA remain external
 tool milestones, so this repository does not claim those results yet.
 
@@ -59,7 +59,8 @@ timing diagrams. The software-visible register contract is in the
 - A 32-bit AXI4-Lite wrapper for program loading, DMA/compute commands,
   structured status, and interrupts.
 - A dependency-free JSON compiler plus an optional ONNX frontend.
-- A Basys3 self-test top, XDC, and non-project Vivado build script.
+- A UART-programmable Basys3 execution-engine top, Python host utility, XDC,
+  non-project Vivado build script, and retained button-driven self-test.
 - OpenLane 2 and OpenROAD-flow-scripts configurations for Sky130.
 - Self-checking RTL and compiler regressions suitable for CI.
 
@@ -76,12 +77,13 @@ The local regression currently passes:
 | Fault safety | Opcode, dimension, PC, scratchpad, DMA selector/range, no-op, and recovery cases | PASS |
 | AXI4-Lite host path | Independent AW/W ordering, byte strobes, program/DMA/compute flow, errors, IRQs | PASS |
 | Randomized differential | Seeded signed shapes, partial K/N tiles, accumulation, padded strides, boundary values, and memory stalls against Python | PASS |
-| FPGA demo | Complete on-chip 8×8 self-test | PASS |
+| FPGA execution engine | Compiler-generated four-tile MATMUL plus HALT; all 60 C words checked | PASS |
+| FPGA UART demo | Bit-level program/data upload, busy arbitration, signed execution, status/result readback, invalid request, and shared-engine 8×8 button self-test | PASS |
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |
 | Integrated SoC | DMA-loaded A/B through stalled external memory, compute arbitration, and DMA-stored 60-word C | PASS |
 | Generic synthesis | 64 PEs, structural check, synthesized-netlist simulation | PASS |
-| Xilinx-7 mapping | 64 array DSPs; 66 DSP48E1 cells including self-test | PASS |
+| Xilinx-7 mapping | UART/engine top: 72 DSP48E1, 8,021 LUT primitives, and 12,458 flip-flops (pre-place) | PASS |
 
 The waveform figures are generated from Icarus VCD traces, and the block
 diagrams are rendered from committed Graphviz sources. Their reproduction
@@ -133,8 +135,9 @@ Graphviz installed:
 make evidence
 ```
 
-The regression needs Python 3.10+ and Icarus Verilog. The JSON compiler has no
-third-party Python dependency.
+The regression needs Python 3.10+ and Icarus Verilog. The JSON compiler and UART
+client tests have no third-party Python dependency; physical serial-port access
+uses optional `pyserial`.
 
 ## Compile a MatMul
 
@@ -163,9 +166,20 @@ For Basys3:
 vivado -mode batch -source fpga/vivado/build_basys3.tcl
 ```
 
-The generated bitstream runs an on-chip signed-matmul self-test. BTNU resets,
-BTNC starts, LED0 means pass, LED1 means fail, and LED2 means busy. Reports and
-the bitstream land in `build/vivado_basys3/`.
+The generated bitstream runs a compact, ISA-compatible 8×8 execution engine
+with a 115200-baud USB-UART loader. BTNU resets and BTNC runs the retained
+self-test through the same engine. To compile, upload, execute, and compare the
+example on a connected board:
+
+```sh
+python -m pip install pyserial
+python scripts/systolicforge_uart_host.py --port COM5 run examples/matmul.json
+```
+
+The byte protocol and LED/status definitions are in
+[docs/UART_PROTOCOL.md](docs/UART_PROTOCOL.md) and
+[docs/FPGA.md](docs/FPGA.md). Reports and the bitstream land in
+`build/vivado_basys3/`.
 
 For Sky130 with OpenLane 2:
 

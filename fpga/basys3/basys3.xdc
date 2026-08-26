@@ -6,6 +6,10 @@ create_clock -add -name sys_clk -period 10.000 -waveform {0 5.000} [get_ports cl
 set_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports reset_button]
 set_property -dict { PACKAGE_PIN U18 IOSTANDARD LVCMOS33 } [get_ports start_button]
 
+## USB-UART bridge: host TX -> FPGA RX, FPGA TX -> host RX
+set_property -dict { PACKAGE_PIN B18 IOSTANDARD LVCMOS33 } [get_ports uart_rx]
+set_property -dict { PACKAGE_PIN A18 IOSTANDARD LVCMOS33 } [get_ports uart_tx]
+
 ## User LEDs
 set_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports {leds[0]}]
 set_property -dict { PACKAGE_PIN E19 IOSTANDARD LVCMOS33 } [get_ports {leds[1]}]

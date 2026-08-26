@@ -7,11 +7,12 @@ There are two intentionally separate Vivado flows:
 | Flow | Top module | Scope | Result type |
 |---|---|---|---|
 | Whole-NPU synthesis | `systolicforge_soc` | 8x8 array, instruction sequencer, scratchpads, and DMA | Out-of-context post-synthesis checkpoint and pre-place reports |
-| Basys3 implementation | `systolicforge_fpga_demo` | 8x8 array plus on-chip numerical self-test | Placed-and-routed checkpoint, reports, and board bitstream |
+| Basys3 implementation | `systolicforge_fpga_uart_demo` | Compact 8x8 ISA engine, USB-UART loader, and shared-engine numerical self-test | Placed-and-routed checkpoint, reports, and board bitstream |
 
-The Basys3 demo is hardware evidence for the compute array and self-test. It is
-not synthesis evidence for the complete NPU. The whole-NPU script exists to keep
-those claims separate.
+The Basys3 configuration contains an ISA-compatible instruction sequencer and
+A/B/C scratchpads, but reduces them to 16 instruction words and 128 words per
+scratchpad. The whole-NPU flow retains the default-depth SoC and DMA. Keep
+those configuration-specific claims separate.
 
 ## Requirements
 
@@ -71,14 +72,15 @@ The timing report is a 10 ns out-of-context, post-synthesis estimate. It does
 not include downstream I/O delays, placement, routing, or final SRAM bindings and
 must not be presented as the product's achieved frequency.
 
-## Flow B: implement the Basys3 self-test
+## Flow B: implement the UART-programmable Basys3 demo
 
 Target:
 
 - Board: Digilent Basys3.
 - FPGA: XC7A35T-1CPG236C.
-- Top module: `systolicforge_fpga_demo`.
+- Top module: `systolicforge_fpga_uart_demo`.
 - Clock constraint: 100 MHz.
+- UART: 115200 8N1 through the board's USB-UART bridge.
 
 Run:
 
@@ -135,15 +137,32 @@ later supplied. Label it accordingly in every published claim.
 3. Program `build/vivado_basys3/systolicforge_basys3.bit`.
 4. Press BTNU to reset.
 5. Press BTNC once to start the self-test.
+6. Confirm LED0 asserts without LED1.
+7. Install `pyserial` and run the host-driven example on the enumerated serial
+   port, for example:
+
+```bat
+python -m pip install pyserial
+python scripts\systolicforge_uart_host.py --port COM5 ping
+python scripts\systolicforge_uart_host.py --port COM5 run examples\matmul.json
+```
 
 LED meanings:
 
 - LED0: completed and passed.
-- LED1: completed and failed.
-- LED2: busy.
-- LEDs 6:3: current input row.
-- LEDs 14:7: array output-valid wavefront.
-- LED15: synchronized start-button state.
+- LED1: self-test failed or execution-engine fault.
+- LED2: compute or self-test busy.
+- LED3: UART parser/response active.
+- LED4: UART transmitter active.
+- LED5: retained compute completion.
+- LED6: UART framing-error sticky status.
+- LED7: command-error sticky status.
+- LEDs 11:8: execution-engine fault code.
+- LEDs 15:12: execution-engine program counter.
+
+The binary request/response contract and compact memory limits are documented
+in `docs/UART_PROTOCOL.md`. Pressing BTNC overwrites program locations 0–1 and
+A/B locations 0–63, so reload the UART workload after running the button test.
 
 ## Evidence package
 
@@ -159,7 +178,8 @@ Also retain:
 
 - Vivado version and operating system;
 - the exact source archive or Git commit used;
-- a photo or short video showing LED0 asserted after the board test;
+- a photo or short video showing LED0 asserted after the button test;
+- the host utility log showing PING plus a full compiler/upload/result check;
 - a note describing every critical warning or error;
 - any manual changes made before or during either run.
 

@@ -12,9 +12,10 @@
   active completion scope unless the user explicitly changes that scope.
 - Prefer finishing and documenting the existing end-to-end design before adding
   major features.
-- Follow the numbered implementation sequence in the roadmap. Randomized
-  differential verification is step 3; after it passes, the next feature
-  milestone is the UART-based host-programmable FPGA demo in step 4.
+- Follow the numbered implementation sequence in the roadmap. Steps 1–4,
+  including randomized differential verification and the UART-based
+  host-programmable FPGA demo, are complete. The next milestone is step 5:
+  archived real-FPGA implementation and board evidence.
 - Update the active roadmap when a milestone is genuinely completed.
 
 ## Claims and evidence
