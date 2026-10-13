@@ -11,11 +11,11 @@ make waveforms
 | Rendered evidence | Testbench | Canonical signal-trace SHA-256 | Displayed samples |
 |---|---|---|---:|
 | `systolic_array_waveform.svg` | `tb/tb_systolic_array.sv` (4×4, M=6, one input bubble) | `51ce8fbcf76bf6d486df95d6b5dfc8e40d4bbbc27d787c59d45f92dc2573e542` | 19 |
-| `npu_instruction_waveform.svg` | `tb/tb_systolicforge_npu.sv` (4×4, two tiled MATMULs) | `880db6bbfa66751321f6e76596bf5e1d309c42dae65079bf355e6b4af05b4ad9` | 170 |
+| `npu_instruction_waveform.svg` | `tb/tb_systolicforge_npu.sv` (4×4, two tiled MATMULs) | `d166486624308ff8af3e543b4f86314de214a521fbb789cb25a59ff03beb688c` | 84 |
 
-The mini-NPU testbench observes `done` 168 falling-edge sample intervals
+The mini-NPU testbench observes `done` 82 falling-edge sample intervals
 after the start pulse is accepted. This is the same execution reported by the
-self-checking simulation as 168 cycles. Sampling on falling edges shows stable
+self-checking simulation as 82 cycles. Sampling on falling edges shows stable
 state after positive-edge sequential logic has settled.
 
 The VCD files stay under `build/waves/` and are intentionally ignored by Git.

@@ -188,13 +188,18 @@ and A/B/C. Defaults remain 4096 words per scratchpad and 256 instructions.
 |---|---|
 | IDLE | Accept start while no local memory request is active |
 | FETCH / DECODE | Synchronous instruction fetch; validate opcode, dimensions, PC and full address ranges |
-| WEIGHT_REQ / WEIGHT_CAPTURE | Fetch B words into the tile; zero inactive lanes |
+| WEIGHT_REQ / WEIGHT_WAIT | Issue active B reads consecutively; wait for the final registered response |
 | LOAD_WEIGHTS | Load the buffered tile into the PEs |
-| ACT_REQ / ACT_CAPTURE | Fetch an A row; zero inactive K lanes |
+| ACT_WAIT | Wait for the selected activation buffer to be ready |
 | ISSUE | Pulse array input valid for one logical row |
 | DRAIN | Capture outputs and commit pipelined C writes |
 
-One logical row is in flight at a time. A C read and result/address metadata
+An independent A prefetch pipeline fills two alternating row buffers while
+weights are fetched and the current array row drains. It stops when both
+buffers are occupied and resumes when ISSUE consumes one. Read address/index
+metadata is delayed with RAM data. Only active K/N lanes are read; inactive
+array lanes are masked to zero. One logical array row is in flight at a time.
+A C read and result/address metadata
 are captured together; the following edge writes the result or wrapped INT32
 accumulation. The next row begins after the row's last C write commits. PC
 advances after the final row commits; HALT then pulses done. Overlapping C
@@ -206,8 +211,8 @@ in the saved legacy engine could collide.
 ![Current scheduled-NPU waveform](diagrams/npu_instruction_waveform.svg)
 
 The 4x4 mini-NPU test executes A=3x6 and B=6x3 as K=4 replace and K=2 accumulate,
-then HALT. It takes **168 simulation cycles** and verifies all nine C words.
-The compiler-generated 8x8 example takes **1246 compute cycles** and verifies
+then HALT. It takes **82 simulation cycles** and verifies all nine C words.
+The compiler-generated 8x8 example takes **478 compute cycles** and verifies
 all 60 C words, including the full 4096/256 SoC configuration. The 10 ns
 simulation clock is a stimulus, not routed frequency evidence.
 
@@ -216,8 +221,10 @@ the legacy controller (23 cycles). Its five-state encoding does not describe
 the current engine. The generated SVG above is the current trace; its hash is
 in [diagrams/WAVEFORM_EVIDENCE.md](diagrams/WAVEFORM_EVIDENCE.md).
 
-The latency increase comes from fetching operands through one read port and
-draining each row. Banking and double buffering remain optional performance
+The initial synchronous-memory checkpoint (`f56b35c`) took 168 and 1246 cycles,
+respectively. Pipelined active-lane reads and activation double buffering reduce
+the example by 61.6% in cycles. C writeback still drains one array row before
+the next is issued. Banking and multiple rows in flight remain performance
 work; see [MEMORY_ARCHITECTURE_REDESIGN.md](MEMORY_ARCHITECTURE_REDESIGN.md).
 
 ## DMA behavior

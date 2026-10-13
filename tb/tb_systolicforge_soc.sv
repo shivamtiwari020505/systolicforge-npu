@@ -81,6 +81,7 @@ module tb_systolicforge_soc #(
     integer errors;
     integer timeout;
     integer compute_cycles;
+    integer compute_a_reads, compute_b_reads, overlapped_a_reads;
     integer signed actual;
     integer signed expected;
 
@@ -120,6 +121,29 @@ module tb_systolicforge_soc #(
     );
 
     always #5 clk = ~clk;
+
+    // Bandwidth checks use physical RAM enables, excluding idle DMA accesses.
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            compute_a_reads <= 0;
+            compute_b_reads <= 0;
+            overlapped_a_reads <= 0;
+        end else if (busy) begin
+            if (dut.u_npu.u_a.read_enable) begin
+                compute_a_reads <= compute_a_reads + 1;
+                if (dut.u_npu.capture_valid || dut.u_npu.writeback_valid_q)
+                    overlapped_a_reads <= overlapped_a_reads + 1;
+            end
+            if (dut.u_npu.u_b.read_enable)
+                compute_b_reads <= compute_b_reads + 1;
+            if (dut.u_npu.array_input_valid &&
+                !dut.u_npu.activation_ready_q[dut.u_npu.issue_bank_q])
+                $fatal(1, "array issued an incomplete activation buffer");
+            if (dut.u_npu.activation_response_valid_q &&
+                dut.u_npu.activation_ready_q[dut.u_npu.activation_response_bank_q])
+                $fatal(1, "prefetch overwrote an unconsumed activation buffer");
+        end
+    end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -365,6 +389,14 @@ module tb_systolicforge_soc #(
             errors = errors + 1;
         end
 
+        // Four tiles use K=8+2 twice (two N tiles), M=6; active B words total
+        // 8*8 + 2*8 + 8*2 + 2*2 = 100. Padding must never trigger RAM reads.
+        if (compute_a_reads != 120 || compute_b_reads != 100)
+            $fatal(1, "unexpected prefetch traffic: A=%0d B=%0d", compute_a_reads, compute_b_reads);
+        if (overlapped_a_reads == 0) $fatal(1, "A prefetch did not overlap C writeback");
+        // A loose performance gate catches a return to the 1246-cycle baseline.
+        if (compute_cycles >= 600) $fatal(1, "low-latency example exceeded cycle budget");
+
         start_dma(1'b0, MEM_C, 0, EXT_C_BASE, C_WORDS[15:0]);
         wait_for_dma();
 
@@ -406,6 +438,8 @@ module tb_systolicforge_soc #(
             );
             $display("INFO: scratchpad words=%0d, instruction words=%0d",
                      (1 << ADDR_W), IMEM_DEPTH);
+            $display("INFO: compute RAM reads A=%0d B=%0d, overlapped A/C cycles=%0d",
+                     compute_a_reads, compute_b_reads, overlapped_a_reads);
         end else begin
             $fatal(1, "FAIL: %0d integrated SoC error(s)", errors);
         end

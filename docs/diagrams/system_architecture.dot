@@ -45,7 +45,7 @@ digraph SystolicForgeSystem {
       sp_a [label="Synchronous A RAM\n4096 × INT8", fillcolor="#fefce8", color="#ca8a04"];
       sp_b [label="Synchronous B RAM\n4096 × INT8", fillcolor="#fefce8", color="#ca8a04"];
       sp_c [label="Synchronous C RAM\n4096 × INT32", fillcolor="#fefce8", color="#ca8a04"];
-      tile [label="Prefetched registers\none A row + B tile", fillcolor="#f0fdfa", color="#0f766e"];
+      tile [label="Pipelined active-lane prefetch\ntwo A row buffers + B tile", fillcolor="#f0fdfa", color="#0f766e"];
       wb [label="C writeback pipeline\nregistered read + wrap/add", fillcolor="#f0fdfa", color="#0f766e"];
 
       array [label="systolic_array\nR × C signed INT8 MAC PEs\nweight-stationary dataflow", fillcolor="#f5f3ff", color="#7c3aed", penwidth=1.6];

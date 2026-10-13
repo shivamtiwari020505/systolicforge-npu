@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
 
-// Full-capacity engine with scheduled synchronous storage and one row in flight.
+// Full-capacity engine with pipelined synchronous reads and two A row buffers.
+// Operand prefetch overlaps row drain; one array row remains in flight so C
+// has one write port and ordered accumulation for arbitrary strides.
 module systolicforge_npu #(
     parameter integer ARRAY_ROWS = 8, ARRAY_COLS = 8,
     parameter integer DATA_W = 8, ACC_W = 32, ADDR_W = 12,
@@ -32,8 +34,8 @@ module systolicforge_npu #(
     localparam logic [3:0] FAULT_PROGRAM_OVERRUN = 4'h4;
 
     typedef enum logic [3:0] {
-        ST_IDLE, ST_FETCH, ST_DECODE, ST_WEIGHT_REQ, ST_WEIGHT_CAPTURE,
-        ST_LOAD_WEIGHTS, ST_ACT_REQ, ST_ACT_CAPTURE, ST_ISSUE, ST_DRAIN
+        ST_IDLE, ST_FETCH, ST_DECODE, ST_WEIGHT_REQ, ST_WEIGHT_WAIT,
+        ST_LOAD_WEIGHTS, ST_ACT_WAIT, ST_ISSUE, ST_DRAIN
     } state_t;
     state_t state_q;
     logic [$clog2(IMEM_DEPTH)-1:0] pc_q;
@@ -41,10 +43,18 @@ module systolicforge_npu #(
     logic [ADDR_W-1:0] a_base_q, b_base_q, c_base_q;
     logic [15:0] lda_q, ldb_q, ldc_q;
     logic accumulate_q;
-    logic [TILE_INDEX_W-1:0] weight_index_q;
+    logic [7:0] weight_row_q, weight_col_q;
+    logic weight_response_valid_q;
+    logic [TILE_INDEX_W-1:0] weight_response_index_q;
     logic [LANE_INDEX_W-1:0] activation_index_q;
+    logic [7:0] prefetch_row_q;
+    logic fill_bank_q, issue_bank_q, activation_fetch_active_q;
+    logic [1:0] activation_ready_q;
+    logic activation_response_valid_q, activation_response_bank_q;
+    logic activation_response_last_q;
+    logic [LANE_INDEX_W-1:0] activation_response_index_q;
     logic [DATA_W-1:0] weight_tile_q [0:TILE_WORDS-1];
-    logic [DATA_W-1:0] activation_tile_q [0:ARRAY_ROWS-1];
+    logic [DATA_W-1:0] activation_tile_q [0:2*ARRAY_ROWS-1];
     logic [INSTR_W-1:0] instruction;
     wire [7:0] instruction_m = instruction[15:8];
     wire [7:0] instruction_k = instruction[23:16];
@@ -69,9 +79,9 @@ module systolicforge_npu #(
     logic [ACC_W-1:0] c_read_data;
     logic [31:0] a_address_full, b_address_full;
     logic [ADDR_W-1:0] a_read_addr, b_read_addr, c_read_addr;
-    wire active_weight = ((weight_index_q / ARRAY_COLS) < k_size_q) &&
-                         ((weight_index_q % ARRAY_COLS) < n_size_q);
-    wire active_activation = (activation_index_q < k_size_q);
+    wire weight_request = (state_q == ST_WEIGHT_REQ);
+    wire activation_request = busy && activation_fetch_active_q &&
+                              !activation_ready_q[fill_bank_q];
     logic weight_load, array_input_valid;
     logic [ARRAY_ROWS*ARRAY_COLS*DATA_W-1:0] weight_bus;
     logic [ARRAY_ROWS*DATA_W-1:0] activation_bus;
@@ -104,10 +114,10 @@ module systolicforge_npu #(
             ({24'd0, instruction_n} - 32'd1);
         instruction_address_invalid = (a_last_address >= DEPTH) ||
             (b_last_address >= DEPTH) || (c_last_address >= DEPTH);
-        a_address_full = 32'(a_base_q) + 32'(issue_row_q) * 32'(lda_q) +
+        a_address_full = 32'(a_base_q) + 32'(prefetch_row_q) * 32'(lda_q) +
                          32'(activation_index_q);
-        b_address_full = 32'(b_base_q) + (32'(weight_index_q) / ARRAY_COLS) *
-                         32'(ldb_q) + (32'(weight_index_q) % ARRAY_COLS);
+        b_address_full = 32'(b_base_q) + 32'(weight_row_q) * 32'(ldb_q) +
+                         32'(weight_col_q);
         a_read_addr = busy ? a_address_full[ADDR_W-1:0] : dma_addr;
         b_read_addr = busy ? b_address_full[ADDR_W-1:0] : dma_addr;
         c_read_addr = busy ? capture_address_full[ADDR_W-1:0] : dma_addr;
@@ -130,14 +140,14 @@ module systolicforge_npu #(
     systolicforge_sdp_ram #(.DATA_W(DATA_W), .ADDR_W(ADDR_W)) u_a (
         .clk(clk), .write_enable(host_write && (dma_mem == 2'd0)),
         .write_address(dma_addr), .write_data(dma_wdata[DATA_W-1:0]),
-        .read_enable(rst_n && (((state_q == ST_ACT_REQ) && active_activation) ||
+        .read_enable(rst_n && (activation_request ||
                      (host_read_request && (dma_mem == 2'd0)))),
         .read_address(a_read_addr), .read_data(a_read_data)
     );
     systolicforge_sdp_ram #(.DATA_W(DATA_W), .ADDR_W(ADDR_W)) u_b (
         .clk(clk), .write_enable(host_write && (dma_mem == 2'd1)),
         .write_address(dma_addr), .write_data(dma_wdata[DATA_W-1:0]),
-        .read_enable(rst_n && (((state_q == ST_WEIGHT_REQ) && active_weight) ||
+        .read_enable(rst_n && (weight_request ||
                      (host_read_request && (dma_mem == 2'd1)))),
         .read_address(b_read_addr), .read_data(b_read_data)
     );
@@ -160,9 +170,13 @@ module systolicforge_npu #(
         weight_bus = '0;
         activation_bus = '0;
         for (bus_index = 0; bus_index < TILE_WORDS; bus_index = bus_index + 1)
-            weight_bus[bus_index*DATA_W +: DATA_W] = weight_tile_q[bus_index];
+            if ((bus_index / ARRAY_COLS < k_size_q) &&
+                (bus_index % ARRAY_COLS < n_size_q))
+                weight_bus[bus_index*DATA_W +: DATA_W] = weight_tile_q[bus_index];
         for (bus_index = 0; bus_index < ARRAY_ROWS; bus_index = bus_index + 1)
-            activation_bus[bus_index*DATA_W +: DATA_W] = activation_tile_q[bus_index];
+            if (bus_index < k_size_q)
+                activation_bus[bus_index*DATA_W +: DATA_W] =
+                    activation_tile_q[32'(issue_bank_q)*ARRAY_ROWS + bus_index];
         capture_valid = 1'b0;
         capture_last = 1'b0;
         capture_result = '0;
@@ -186,12 +200,14 @@ module systolicforge_npu #(
         .output_valid(array_output_valid), .results(array_results)
     );
 
-    // Tile contents are overwritten before use; storage has no reset.
+    // Response metadata is delayed alongside synchronous RAM data. Inactive
+    // lanes are masked to zero on the array buses, so they need no RAM fetch.
     always_ff @(posedge clk) begin
-        if (state_q == ST_WEIGHT_CAPTURE)
-            weight_tile_q[weight_index_q] <= active_weight ? b_read_data : '0;
-        if (state_q == ST_ACT_CAPTURE)
-            activation_tile_q[activation_index_q] <= active_activation ? a_read_data : '0;
+        if (weight_response_valid_q)
+            weight_tile_q[weight_response_index_q] <= b_read_data;
+        if (activation_response_valid_q)
+            activation_tile_q[32'(activation_response_bank_q)*ARRAY_ROWS +
+                              32'(activation_response_index_q)] <= a_read_data;
     end
 
     always_ff @(posedge clk or negedge rst_n) begin
@@ -223,8 +239,20 @@ module systolicforge_npu #(
             ldb_q <= '0;
             ldc_q <= '0;
             accumulate_q <= 1'b0;
-            weight_index_q <= '0;
+            weight_row_q <= '0;
+            weight_col_q <= '0;
+            weight_response_valid_q <= 1'b0;
+            weight_response_index_q <= '0;
             activation_index_q <= '0;
+            prefetch_row_q <= '0;
+            fill_bank_q <= 1'b0;
+            issue_bank_q <= 1'b0;
+            activation_ready_q <= '0;
+            activation_fetch_active_q <= 1'b0;
+            activation_response_valid_q <= 1'b0;
+            activation_response_bank_q <= 1'b0;
+            activation_response_index_q <= '0;
+            activation_response_last_q <= 1'b0;
             writeback_valid_q <= 1'b0;
             writeback_last_q <= 1'b0;
             writeback_addr_q <= '0;
@@ -235,6 +263,32 @@ module systolicforge_npu #(
             fault_code <= '0;
         end else begin
             done <= 1'b0;
+            weight_response_valid_q <= weight_request;
+            if (weight_request)
+                weight_response_index_q <= TILE_INDEX_W'(
+                    32'(weight_row_q)*ARRAY_COLS + 32'(weight_col_q));
+            activation_response_valid_q <= activation_request;
+            if (activation_request) begin
+                activation_response_index_q <= activation_index_q;
+                activation_response_bank_q <= fill_bank_q;
+                activation_response_last_q <= (activation_index_q == k_size_q - 1'b1);
+                if (activation_index_q == k_size_q - 1'b1)
+                    activation_fetch_active_q <= 1'b0;
+                else
+                    activation_index_q <= activation_index_q + 1'b1;
+            end
+            if (activation_response_valid_q && activation_response_last_q) begin
+                // All active lanes in this buffer have now committed.
+                activation_ready_q[activation_response_bank_q] <= 1'b1;
+                if (prefetch_row_q < m_size_q - 1'b1) begin
+                    prefetch_row_q <= prefetch_row_q + 1'b1;
+                    fill_bank_q <= !fill_bank_q;
+                    activation_index_q <= '0;
+                    activation_fetch_active_q <= 1'b1;
+                end
+            end
+            if (state_q == ST_ISSUE)
+                activation_ready_q[issue_bank_q] <= 1'b0;
             writeback_valid_q <= capture_valid;
             if (capture_valid) begin
                 writeback_last_q <= capture_last;
@@ -280,7 +334,14 @@ module systolicforge_npu #(
                                 ldc_q <= instruction[127:112];
                                 accumulate_q <= instruction[4];
                                 issue_row_q <= '0;
-                                weight_index_q <= '0;
+                                weight_row_q <= '0;
+                                weight_col_q <= '0;
+                                activation_index_q <= '0;
+                                prefetch_row_q <= '0;
+                                fill_bank_q <= 1'b0;
+                                issue_bank_q <= 1'b0;
+                                activation_ready_q <= '0;
+                                activation_fetch_active_q <= 1'b1;
                                 state_q <= ST_WEIGHT_REQ;
                             end
                         end
@@ -291,19 +352,21 @@ module systolicforge_npu #(
                         end
                     endcase
                 end
-                ST_WEIGHT_REQ: state_q <= ST_WEIGHT_CAPTURE;
-                ST_WEIGHT_CAPTURE: if (weight_index_q == TILE_WORDS - 1) begin
-                    activation_index_q <= '0; state_q <= ST_LOAD_WEIGHTS;
-                end else begin
-                    weight_index_q <= weight_index_q + 1'b1; state_q <= ST_WEIGHT_REQ;
+                ST_WEIGHT_REQ: begin
+                    if (weight_col_q == n_size_q - 1'b1) begin
+                        weight_col_q <= '0;
+                        if (weight_row_q == k_size_q - 1'b1)
+                            state_q <= ST_WEIGHT_WAIT;
+                        else
+                            weight_row_q <= weight_row_q + 1'b1;
+                    end else
+                        weight_col_q <= weight_col_q + 1'b1;
                 end
-                ST_LOAD_WEIGHTS: state_q <= ST_ACT_REQ;
-                ST_ACT_REQ: state_q <= ST_ACT_CAPTURE;
-                ST_ACT_CAPTURE: if (activation_index_q == ARRAY_ROWS - 1)
-                    state_q <= ST_ISSUE;
-                else begin
-                    activation_index_q <= activation_index_q + 1'b1; state_q <= ST_ACT_REQ;
-                end
+                // The final response writes the tile on this edge; the next
+                // edge loads PE weights after every active word is committed.
+                ST_WEIGHT_WAIT: state_q <= ST_LOAD_WEIGHTS;
+                ST_LOAD_WEIGHTS: state_q <= ST_ACT_WAIT;
+                ST_ACT_WAIT: if (activation_ready_q[issue_bank_q]) state_q <= ST_ISSUE;
                 ST_ISSUE: state_q <= ST_DRAIN;
                 ST_DRAIN: if (writeback_valid_q && writeback_last_q) begin
                     // This edge also commits C: release the row only afterward.
@@ -311,7 +374,8 @@ module systolicforge_npu #(
                         pc_q <= pc_q + 1'b1; state_q <= ST_FETCH;
                     end else begin
                         issue_row_q <= issue_row_q + 1'b1;
-                        activation_index_q <= '0; state_q <= ST_ACT_REQ;
+                        issue_bank_q <= !issue_bank_q;
+                        state_q <= ST_ACT_WAIT;
                     end
                 end
                 default: state_q <= ST_IDLE;

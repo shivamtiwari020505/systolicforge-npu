@@ -94,6 +94,8 @@ class OOCFlowTests(unittest.TestCase):
         params = self.tcl.splitlist(self.tcl.getvar("tool_params"))
         self.assertEqual(len(params), 0)
         self.assertIn("execution_engine=scheduled_synchronous_sdp", self.manifest("full"))
+        self.assertIn("operand_prefetch=pipelined_active_lanes", self.manifest("full"))
+        self.assertIn("activation_row_buffers=2", self.manifest("full"))
         self.assertIn("scratchpad_words_per_memory=4096", self.manifest("full"))
         self.assertFalse((self.root / "build/vivado_npu_ooc_compact").exists())
 

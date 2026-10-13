@@ -212,9 +212,9 @@
 <!-- tile -->
 <g id="node10" class="node">
 <title>tile</title>
-<path fill="#f0fdfa" stroke="#0f766e" d="M605,-366C605,-366 514,-366 514,-366 508,-366 502,-360 502,-354 502,-354 502,-342 502,-342 502,-336 508,-330 514,-330 514,-330 605,-330 605,-330 611,-330 617,-336 617,-342 617,-342 617,-354 617,-354 617,-360 611,-366 605,-366"/>
-<text text-anchor="middle" x="559.5" y="-351.2" font-family="Arial" font-size="11.00" fill="#0f172a">Prefetched registers</text>
-<text text-anchor="middle" x="559.5" y="-339.2" font-family="Arial" font-size="11.00" fill="#0f172a">one A row + B tile</text>
+<path fill="#f0fdfa" stroke="#0f766e" d="M627.5,-366C627.5,-366 491.5,-366 491.5,-366 485.5,-366 479.5,-360 479.5,-354 479.5,-354 479.5,-342 479.5,-342 479.5,-336 485.5,-330 491.5,-330 491.5,-330 627.5,-330 627.5,-330 633.5,-330 639.5,-336 639.5,-342 639.5,-342 639.5,-354 639.5,-354 639.5,-360 633.5,-366 627.5,-366"/>
+<text text-anchor="middle" x="559.5" y="-351.2" font-family="Arial" font-size="11.00" fill="#0f172a">Pipelined active&#45;lane prefetch</text>
+<text text-anchor="middle" x="559.5" y="-339.2" font-family="Arial" font-size="11.00" fill="#0f172a">two A row buffers + B tile</text>
 </g>
 <!-- sp_a&#45;&gt;tile -->
 <g id="edge8" class="edge">

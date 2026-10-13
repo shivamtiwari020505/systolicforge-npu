@@ -221,9 +221,10 @@ The staged full-depth synchronous-memory migration and its acceptance gates are
 defined in
 [docs/MEMORY_ARCHITECTURE_REDESIGN.md](docs/MEMORY_ARCHITECTURE_REDESIGN.md).
 
-The migration is implemented in the general NPU. It prefetches weights and A
-rows through synchronous RAM and commits each row's C writes before issuing
-another row. The five-word example takes 1246 compute cycles; the array's
+The migration is implemented in the general NPU. It pipelines active weight
+and A reads through synchronous RAM, overlaps A prefetch through two buffers,
+and commits each row's C writes before issuing another row. The five-word
+example takes 478 compute cycles (initial synchronous version: 1246); the array's
 64-MAC/cycle capability remains a theoretical datapath peak. Reproduce the
 full-depth comparisons and memory mapping with `make memory-redesign
 synth-npu-full`. Vivado confirmation remains pending.

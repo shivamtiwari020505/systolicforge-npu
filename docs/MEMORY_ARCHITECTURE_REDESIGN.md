@@ -65,10 +65,12 @@ fail CI instead of silently producing a large logic implementation.
 
 ## First implementation: scheduled synchronous memory
 
-The replacement schedules synchronous reads and C writes while retaining full
-capacities and the SoC/DMA interface. Each word prefetch has request/capture
-phases. One activation row is in flight, and its final C write commits before
-the next row starts.
+The replacement pipelines synchronous reads and schedules C writes while
+retaining full capacities and the SoC/DMA interface. B requests cover only
+active KxN words; responses carry their destination tile index. Inactive array
+lanes are masked to zero, so unused storage never needs fetching or clearing.
+One array row is in flight; the A prefetch pipeline fills two alternating
+buffers independently, including during B loading and C drain/writeback.
 
 ```text
 DMA / program ports
@@ -105,12 +107,22 @@ Required controller phases are:
 7. Advance the PC only after the last committed C write, not merely after the
    last array output appears.
 
-The implemented row issue interval includes activation prefetch, array drain
-and C writeback. It depends on physical rows and active columns, rather than
-the board engine's fixed `ARRAY_ROWS + 1` spacing. The mini-NPU regression
-takes 168 cycles and the 8x8 compiler example takes 1246 compute cycles (legacy:
-23 and 81). This trades throughput for full-depth memory mapping. Banking and
-overlap remain optional performance improvements.
+The row issue interval is set by array drain/C writeback and activation-buffer
+readiness. The A pipeline issues one active K word per cycle; it stalls when
+its destination buffer is occupied and publishes readiness only after the last
+response commits. ISSUE consumes the selected ready buffer. The destination
+bank/lane metadata travels with the RAM response and is flushed on reset.
+
+| Local RTL configuration | Mini-NPU cycles | Compiler example compute cycles |
+|---|---:|---:|
+| Initial synchronous design (`f56b35c`) | 168 | 1246 |
+| Pipelined reads + active lanes + two A buffers | 82 | 478 |
+
+The example uses 120 active A reads and 100 active B reads. The SoC regression
+requires overlap between A reads and C writeback, rejects writes into occupied
+buffers, and enforces a loose 600-cycle budget. The 61.6% cycle reduction is
+simulation evidence; real latency depends on the routed clock frequency.
+Banking and multiple rows in flight remain separate performance work.
 
 ## Memory and collision contract
 
@@ -168,6 +180,12 @@ tests, plus a proof that every accepted result is eventually committed.
    removed. Vivado execution and archived reports are pending.
 7. Banking remains future performance work.
 
+The first latency optimization phase is implemented: consecutive synchronous
+reads, active-lane prefetch, and two activation row buffers. Local full-depth
+mapping remains eight BRAMs and 73 DSPs, with 1943 LUT primitives, 4046
+flip-flops and 12 RAM32M primitives in Yosys 0.33. Local regressions, the 32-case
+legacy/golden comparison, and the independent 64-case stress seed pass.
+
 ## Acceptance gates
 
 The scheduled redesign is complete only when all of the following hold:
@@ -190,5 +208,5 @@ The scheduled redesign is complete only when all of the following hold:
 Report both peak array arithmetic and measured end-to-end execution. At minimum
 record cycles spent in instruction fetch, weight prefetch, activation prefetch,
 array issue/drain, C accumulation/writeback, and DMA. This exposes whether a
-future banking or double-buffering change improves the actual workload rather
+future banking or additional-overlap change improves the actual workload rather
 than only the theoretical 64-MAC array peak.

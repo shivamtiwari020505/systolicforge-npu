@@ -139,12 +139,11 @@ STATE_NAMES = {
     1: "FETCH",
     2: "DECODE",
     3: "W_REQ",
-    4: "W_CAPTURE",
+    4: "W_WAIT",
     5: "LOAD_W",
-    6: "A_REQ",
-    7: "A_CAPTURE",
-    8: "ISSUE",
-    9: "DRAIN",
+    6: "A_WAIT",
+    7: "ISSUE",
+    8: "DRAIN",
 }
 
 

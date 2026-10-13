@@ -136,6 +136,12 @@ Run `make synth-npu-full`. On 2026-10-13, Yosys 0.33 mapped the complete
 | CARRY4 | 117 |
 | MUXF7 / MUXF8 | 202 / 60 |
 
+These counts describe the initial synchronous design at `f56b35c`. The
+subsequent pipelined-prefetch version maps to eight RAMB36E1, 73 DSP48E1,
+1943 LUT primitives, 4046 flip-flops, 12 RAM32M, 143 CARRY4, 107 MUXF7 and
+33 MUXF8. Bulk-memory capacities remain unchanged; distributed RAM is used
+for small tile storage. The full-depth synthesis assertion still passes.
+
 The flattened design passes `check -assert` and an exact eight-BRAM assertion.
 Generated artifacts are `build/yosys_npu_full.log`,
 `build/systolicforge_soc_full_xc7.json`, and

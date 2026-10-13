@@ -63,6 +63,12 @@ Vivado OOC with `-tclargs full`. Step 5 remains in progress until the Vivado
 and board evidence is archived. See
 [MEMORY_ARCHITECTURE_REDESIGN.md](MEMORY_ARCHITECTURE_REDESIGN.md).
 
+The first latency phase is locally verified: pipelined reads, active-lane
+prefetch, and two activation row buffers reduce the compiler example from
+1246 to 478 compute cycles. Full capacities and eight-BRAM mapping are retained.
+Multiple rows in flight and banking remain optional follow-up performance work;
+routed timing and board evidence are still the next external milestone.
+
 A failure from the randomized suite can still be replayed exactly with:
 
 ```sh

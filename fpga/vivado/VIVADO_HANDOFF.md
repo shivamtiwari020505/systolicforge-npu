@@ -47,6 +47,11 @@ the next run: 4096 words per A/B/C scratchpad, 256 instructions, an 8x8 array
 and DMA. The instruction encoding and host registers are unchanged. Execution
 latency increases because each row finishes C writeback before the next starts.
 
+The current version pipelines active-lane reads and overlaps A prefetch using
+two activation buffers. The compiler example takes 478 compute cycles locally,
+versus 1246 for the initial synchronous design. The build manifest records the
+prefetch mode and buffer count. Routed frequency still needs Vivado evidence.
+
 The interrupted 2026-10-12 run used behavioral multi-port arrays. That engine
 is retained only in `tb/reference/` for simulation comparisons. The current
 synthesis sources include the synchronous RAM primitive and use normal memory
