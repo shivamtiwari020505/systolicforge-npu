@@ -20,6 +20,9 @@ module systolic_pe #(
 );
 
     logic signed [DATA_W-1:0] weight_q;
+    // An 8x8 array uses 64 multipliers, which fits the Basys3's 90 DSP48E1
+    // blocks. Prefer DSP mapping to reduce LUT congestion and routing delay.
+    (* use_dsp = "yes" *)
     wire signed [(2*DATA_W)-1:0] product = activation_in * weight_q;
     wire signed [ACC_W-1:0] product_ext =
         {{(ACC_W-(2*DATA_W)){product[2*DATA_W-1]}}, product};

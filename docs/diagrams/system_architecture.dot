@@ -38,13 +38,15 @@ digraph SystolicForgeSystem {
       color="#0f766e";
       style="rounded";
 
-      imem [label="Instruction memory\n256 × 128-bit default", fillcolor="#ecfeff", color="#0891b2"];
-      fsm [label="Sequencer + PC + bounds preflight\nIDLE → FETCH → LOAD_WEIGHTS\n→ STREAM → DRAIN", fillcolor="#f0fdfa", color="#0f766e"];
+      imem [label="Synchronous instruction RAM\n256 × 128-bit default", fillcolor="#ecfeff", color="#0891b2"];
+      fsm [label="Sequencer + PC + bounds preflight\nFETCH → DECODE → PREFETCH\n→ LOAD / ISSUE → WRITEBACK", fillcolor="#f0fdfa", color="#0f766e"];
       regs [label="Decoded tile registers\nM, K, N • bases • strides\nACCUMULATE", fillcolor="#f0fdfa", color="#0f766e"];
 
-      sp_a [label="A scratchpad\nsigned INT8", fillcolor="#fefce8", color="#ca8a04"];
-      sp_b [label="B scratchpad\nsigned INT8", fillcolor="#fefce8", color="#ca8a04"];
-      sp_c [label="C scratchpad\nsigned INT32", fillcolor="#fefce8", color="#ca8a04"];
+      sp_a [label="Synchronous A RAM\n4096 × INT8", fillcolor="#fefce8", color="#ca8a04"];
+      sp_b [label="Synchronous B RAM\n4096 × INT8", fillcolor="#fefce8", color="#ca8a04"];
+      sp_c [label="Synchronous C RAM\n4096 × INT32", fillcolor="#fefce8", color="#ca8a04"];
+      tile [label="Prefetched registers\none A row + B tile", fillcolor="#f0fdfa", color="#0f766e"];
+      wb [label="C writeback pipeline\nregistered read + wrap/add", fillcolor="#f0fdfa", color="#0f766e"];
 
       array [label="systolic_array\nR × C signed INT8 MAC PEs\nweight-stationary dataflow", fillcolor="#f5f3ff", color="#7c3aed", penwidth=1.6];
 
@@ -54,9 +56,12 @@ digraph SystolicForgeSystem {
       regs -> sp_b [style=dashed, arrowhead=none, label="base + k·ldb + col"];
       regs -> sp_c [style=dashed, arrowhead=none, label="base + row·ldc + col"];
       fsm -> array [label="weight_load\ninput_valid"];
-      sp_a -> array [label="R × INT8 activations"];
-      sp_b -> array [label="R × C INT8 weights"];
-      array -> sp_c [label="C × INT32 results\nper-column valid"];
+      sp_a -> tile [label="one INT8 word / read"];
+      sp_b -> tile [label="one INT8 word / read"];
+      tile -> array [label="buffered activations / weights"];
+      array -> wb [label="one active column / cycle"];
+      sp_c -> wb [label="old C (accumulate)"];
+      wb -> sp_c [label="one INT32 write / cycle"];
     }
   }
 

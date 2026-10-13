@@ -107,7 +107,7 @@ module systolicforge_soc #(
         .dma_addr(local_addr),
         .dma_wdata(local_wdata),
         .dma_rdata(local_rdata),
-        .start(start && !dma_busy),
+        .start(start && !dma_busy && !(dma_cmd_valid && dma_cmd_ready)),
         .busy(busy),
         .done(done),
         .fault(npu_fault),

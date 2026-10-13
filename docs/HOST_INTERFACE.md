@@ -161,6 +161,16 @@ bits.
 
 ## Concurrency and reset
 
+The general NPU's internal scratchpad port now uses synchronous reads. Direct
+RTL clients assert `dma_valid`, hold selector/address, and sample `dma_rdata`
+only when `dma_ready` is high. A new read takes one clock edge; responses hold
+while the request is held, including external DMA stalls. Idle command-ready
+behavior and the software-visible register map are unchanged. Simultaneous
+SoC compute-start and accepted DMA-command requests give priority to DMA.
+Reset flushes control/pending responses without clearing RAM; initialize all
+memory words that a program reads before use. Instruction writes during
+compute are ignored at the NPU port and rejected by the AXI wrapper.
+
 - Compute and local DMA activity are mutually exclusive in
   `systolicforge_soc`.
 - Start and DMA-submit command writes return `SLVERR` instead of being silently

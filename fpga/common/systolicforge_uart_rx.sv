@@ -22,8 +22,8 @@ module systolicforge_uart_rx #(
     } rx_state_t;
 
     rx_state_t state_q;
-    logic rx_meta_q;
-    logic rx_sync_q;
+    (* ASYNC_REG = "TRUE" *) logic rx_meta_q;
+    (* ASYNC_REG = "TRUE" *) logic rx_sync_q;
     logic [COUNT_W-1:0] count_q;
     logic [2:0] bit_q;
     logic [7:0] data_q;

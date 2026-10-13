@@ -4,6 +4,11 @@ This document describes the RTL currently implemented in this repository. Each
 claim is tied to a named module or to a measured simulation trace; proposed
 features are not shown as implemented blocks.
 
+The full-depth synchronous-memory replacement is implemented and locally
+verified; Vivado and board evidence remain pending. Its fixed
+interfaces, memory contract, migration stages, and acceptance criteria are in
+[MEMORY_ARCHITECTURE_REDESIGN.md](MEMORY_ARCHITECTURE_REDESIGN.md).
+
 ## System architecture
 
 ![SystolicForge system architecture](diagrams/system_architecture.svg)
@@ -19,8 +24,8 @@ For the Basys3 demonstration, `systolicforge_fpga_uart_demo` combines the UART
 command parser with `systolicforge_fpga_engine`. The board engine implements the
 same NOP/MATMUL/HALT instruction fields, scratchpad programming contract,
 tiling, accumulation, and faults, but serializes A/B reads into tile registers.
-This keeps the 8×8 compute datapath while avoiding the general NPU's large
-asynchronous multi-port scratchpad muxes on the small FPGA.
+The board engine uses compact distributed RAM, while the general NPU now uses
+full-depth synchronous block RAM. Both retain the 8×8 compute datapath.
 
 ### RTL and software anchors
 
@@ -34,10 +39,8 @@ asynchronous multi-port scratchpad muxes on the small FPGA.
 | Board host client and compiler upload path | [`scripts/systolicforge_uart_host.py`](../scripts/systolicforge_uart_host.py) |
 | SoC integration and compute/DMA exclusion | [`rtl/systolicforge_soc.sv`](../rtl/systolicforge_soc.sv#L41-L105) |
 | Compiler-to-external-memory integrated regression | [`tb/tb_systolicforge_soc.sv`](../tb/tb_systolicforge_soc.sv) |
-| Instruction memory, A/B/C scratchpads, and decoded tile registers | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L53-L79) |
-| Instruction decode and five-state sequencer | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L179-L253) |
-| Weight and activation address generation | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L120-L141) |
-| Per-column result capture and optional C accumulation | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv#L255-L278) |
+| Synchronous instruction/A/B/C RAM and tile registers | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv), [`rtl/systolicforge_sdp_ram.sv`](../rtl/systolicforge_sdp_ram.sv) |
+| Scheduled fetch, prefetch, issue and writeback sequencer | [`rtl/systolicforge_npu.sv`](../rtl/systolicforge_npu.sv) |
 | Burst DMA ready/valid state machine | [`rtl/scratchpad_dma.sv`](../rtl/scratchpad_dma.sv#L39-L146) |
 | Quantization, M/K/N tiling, and instruction emission | [`compiler/systolicforge_compile.py`](../compiler/systolicforge_compile.py) |
 
@@ -80,9 +83,8 @@ compact board memory configuration are in [`UART_PROTOCOL.md`](UART_PROTOCOL.md)
 The board engine prefetches one 8×8 B tile over 64 cycles and one A row over
 eight cycles before pulsing the array input. Issuing rows nine cycles apart
 guarantees at most one active output column per cycle, allowing a single C
-scratchpad write port. This is intentionally lower throughput than
-`systolicforge_npu`; it is a resource tradeoff at the demonstration boundary,
-not a change to the ISA or PE array. The compiler-generated 6×10 example still
+scratchpad write port. The full-depth engine has its own synchronous read and
+writeback schedule with the same ISA and PE array. The compiled 6×10 example still
 executes as four tiled MATMUL instructions plus HALT and matches all 60 golden
 outputs in the FPGA-engine regression.
 
@@ -149,7 +151,8 @@ still would not represent the PE-array row count.
 
 Before streaming a tile, the sequencer asserts `weight_load` for one cycle and
 the complete K×N B tile is captured in the PE weight registers. One logical A
-row is then issued on every `STREAM` cycle.
+row is issued when the controller pulses `array_input_valid`. The array itself
+can accept a row every cycle; the scheduled NPU issues rows less frequently.
 
 Lane `k` passes through `k` input-skew registers before entering array row `k`.
 Inside the array, activations advance east and partial sums advance south. This
@@ -178,95 +181,44 @@ SVG is rendered from its VCD rather than drawn manually.
 
 ## Mini-NPU sequencer
 
-`systolicforge_npu` wraps the array with a 128-bit instruction memory, separate
-signed INT8 A/B scratchpads, a signed INT32 C scratchpad, a program counter, and
-the following controller states:
+The general NPU uses four synchronous SDP RAM instances for instruction memory
+and A/B/C. Defaults remain 4096 words per scratchpad and 256 instructions.
 
-| State | Work performed | Exit condition |
-|---|---|---|
-| `IDLE` | Accept `start`, clear prior fault, set `busy` | `start` |
-| `FETCH` | Read/decode instruction; validate opcode, tile dimensions, PC, and complete A/B/C address ranges | NOP, MATMUL, HALT, or fault |
-| `LOAD_WEIGHTS` | Assert `weight_load` for the current K×N B tile | One cycle |
-| `STREAM` | Issue one A row per cycle | `m` rows issued |
-| `DRAIN` | Capture staggered array outputs into C | Last active column of last row |
+| State | Work performed |
+|---|---|
+| IDLE | Accept start while no local memory request is active |
+| FETCH / DECODE | Synchronous instruction fetch; validate opcode, dimensions, PC and full address ranges |
+| WEIGHT_REQ / WEIGHT_CAPTURE | Fetch B words into the tile; zero inactive lanes |
+| LOAD_WEIGHTS | Load the buffered tile into the PEs |
+| ACT_REQ / ACT_CAPTURE | Fetch an A row; zero inactive K lanes |
+| ISSUE | Pulse array input valid for one logical row |
+| DRAIN | Capture outputs and commit pipelined C writes |
 
-K dimensions larger than `ARRAY_ROWS` use multiple MATMUL instructions. The
-first replaces C; later instructions set `ACCUMULATE` and add partial results to
-the existing C entry. N is tiled across array columns, while M is split only
-when it exceeds the ISA's 255-row field.
+One logical row is in flight at a time. A C read and result/address metadata
+are captured together; the following edge writes the result or wrapped INT32
+accumulation. The next row begins after the row's last C write commits. PC
+advances after the final row commits; HALT then pulses done. Overlapping C
+strides execute in the row/column order specified by the ISA; concurrent writes
+in the saved legacy engine could collide.
 
 ## Measured instruction timing
 
-![GTKWave capture of the mini-NPU instruction timing](images/npu_instruction_timing.png)
+![Current scheduled-NPU waveform](diagrams/npu_instruction_waveform.svg)
 
-*Figure: GTKWave display of the Icarus VCD generated by the self-checking
-mini-NPU regression. The white marker is the accepted start and the red marker
-is the HALT completion pulse.*
+The 4x4 mini-NPU test executes A=3x6 and B=6x3 as K=4 replace and K=2 accumulate,
+then HALT. It takes **168 simulation cycles** and verifies all nine C words.
+The compiler-generated 8x8 example takes **1246 compute cycles** and verifies
+all 60 C words, including the full 4096/256 SoC configuration. The 10 ns
+simulation clock is a stimulus, not routed frequency evidence.
 
-This is the repository's physical 4x4 mini-NPU regression executing logical
-A=3x6, B=6x3, C=3x3. Its instruction stream is:
+The older GTKWave screenshot in `images/npu_instruction_timing.png` depicts
+the legacy controller (23 cycles). Its five-state encoding does not describe
+the current engine. The generated SVG above is the current trace; its hash is
+in [diagrams/WAVEFORM_EVIDENCE.md](diagrams/WAVEFORM_EVIDENCE.md).
 
-| PC | Instruction | Work performed |
-|---:|---|---|
-| 0 | `MATMUL M=3, K=4, N=3`, `ACCUMULATE=0` | Compute K indices 0 through 3 and replace C. |
-| 1 | `MATMUL M=3, K=2, N=3`, `ACCUMULATE=1` | Compute K indices 4 and 5 and add the partial result to C. |
-| 2 | `HALT` | Deassert `busy`, pulse `done`, and return to `IDLE`. |
-
-The left GTKWave value column is a snapshot at the red `DONE` cursor; it is not
-a summary of every value in the trace.
-
-| Trace | Definition | Observed behavior and significance |
-|---|---|---|
-| `clk` | Sequential simulation clock | 10 ns period (100 MHz testbench clock). This is a stimulus frequency, not FPGA timing-closure evidence. |
-| `start` | Execution request sampled in `IDLE` | Pulses for one cycle at `START_ACCEPTED`; the controller starts at PC 0. It is 0 at the done cursor. |
-| `busy` | Program-in-progress status | Rises when start is accepted, stays high across both MATMULs, and falls when PC 2 decodes HALT. |
-| `pc_debug[3:0]` | Current instruction-memory address | Advances 0 to 1 to 2. At the cursor it remains 2, the HALT address. |
-| `state_q[2:0]` | Sequencer state | Repeats `FETCH -> LOAD_W -> STREAM -> DRAIN` for PCs 0 and 1, then returns to `IDLE` after HALT. |
-| `weight_load` | PE weight-register enable | High for exactly one `LOAD_W` cycle per MATMUL tile. |
-| `array_input_valid` | Valid qualifier for the activation vector | High for three `STREAM` cycles per instruction because M=3 logical rows are issued. |
-| `issue_row_q[7:0]` | Logical A/C row being issued | Counts 0, 1, 2 for each instruction. It remains 2 at completion because HALT does not clear this debug register. |
-| `array_output_valid[3:0]` | Per-physical-column output qualifiers | Shows the registered result wavefront entering and leaving successive array columns. Only active logical columns 0 through 2 are committed to C. |
-| `fault` | Illegal opcode or illegal tile-shape indication | Remains 0, so both MATMUL instructions passed controller validation and HALT was recognized. |
-| `done` | One-cycle program-completion pulse | Becomes 1 when PC 2 executes HALT, then clears on the following cycle. |
-
-The five state encodings displayed by the GTKWave translation filter are:
-
-| Encoding | Display | Controller action |
-|---:|---|---|
-| `000` | `IDLE` | Wait for `start`. |
-| `001` | `FETCH` | Decode the instruction at `pc_debug`. |
-| `010` | `LOAD_W` | Capture the current B tile into stationary PE weights. |
-| `011` | `STREAM` | Issue one logical A row per cycle. |
-| `100` | `DRAIN` | Capture staggered array results until the last active column and row arrive. |
-
-`array_output_valid` is displayed as `[3:0]`, so the leftmost digit is physical
-column 3. Its ramp decodes as follows:
-
-| Value | Physical columns carrying a valid result |
-|---|---|
-| `0001` | 0 |
-| `0011` | 1 and 0 |
-| `0111` | 2, 1, and 0 |
-| `1110` | 3, 2, and 1 |
-| `1100` | 3 and 2 |
-| `1000` | 3 |
-| `0000` | None; the pipeline is drained. |
-
-Physical column 3 still receives a valid wavefront because the instantiated
-array has four columns, but N=3. The result-capture logic ignores that column
-because it only writes columns where `capture_col < n_size_q`.
-
-The markers are 230 ns apart. With a 10 ns period, the measured start-to-done
-latency is therefore 23 cycles, matching the testbench's printed result. The
-waveform proves controller ordering, tile issue, wavefront timing, completion,
-and absence of a controller fault. Numerical correctness is established by the
-self-checking testbench's comparison of all nine C entries; `array_results` and
-C scratchpad data are not displayed in this screenshot.
-
-The exact instructions, matrices, golden-model comparison, and timeout are in
-[`tb/tb_systolicforge_npu.sv`](../tb/tb_systolicforge_npu.sv#L141-L225).
-Trace hashes and the regeneration contract are in
-[`diagrams/WAVEFORM_EVIDENCE.md`](diagrams/WAVEFORM_EVIDENCE.md).
+The latency increase comes from fetching operands through one read port and
+draining each row. Banking and double buffering remain optional performance
+work; see [MEMORY_ARCHITECTURE_REDESIGN.md](MEMORY_ARCHITECTURE_REDESIGN.md).
 
 ## DMA behavior
 

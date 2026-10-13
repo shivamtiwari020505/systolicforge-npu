@@ -71,9 +71,16 @@ module systolicforge_fpga_engine #(
 
     state_t state_q;
 
+    // These memories intentionally use asynchronous reads and synchronous,
+    // non-reset writes so Vivado can implement them as distributed RAM. Keep
+    // their writes out of the asynchronously reset control process below.
+    (* ram_style = "distributed" *)
     logic signed [DATA_W-1:0] a_scratchpad [0:DEPTH-1];
+    (* ram_style = "distributed" *)
     logic signed [DATA_W-1:0] b_scratchpad [0:DEPTH-1];
+    (* ram_style = "distributed" *)
     logic signed [ACC_W-1:0] c_scratchpad [0:DEPTH-1];
+    (* ram_style = "distributed" *)
     logic [INSTR_W-1:0] instruction_mem [0:IMEM_DEPTH-1];
 
     logic signed [DATA_W-1:0] weight_tile_q [0:TILE_WORDS-1];
@@ -134,6 +141,10 @@ module systolicforge_fpga_engine #(
     logic [31:0] capture_address_full;
     logic signed [ACC_W-1:0] capture_result;
     logic capture_is_last;
+
+    logic c_write_enable;
+    logic [ADDR_W-1:0] c_write_addr;
+    logic signed [ACC_W-1:0] c_write_data;
 
     integer bus_index;
     integer capture_scan;
@@ -202,6 +213,28 @@ module systolicforge_fpga_engine #(
         endcase
     end
 
+    // The host and compute engine are mutually exclusive, so C has one
+    // physical write port. Expressing that port explicitly avoids Vivado
+    // dissolving the complete C scratchpad into registers and a deep mux.
+    always @* begin
+        c_write_enable = 1'b0;
+        c_write_addr = '0;
+        c_write_data = '0;
+
+        if (dma_valid && dma_ready && dma_write && (dma_mem == MEM_C)) begin
+            c_write_enable = 1'b1;
+            c_write_addr = dma_addr;
+            c_write_data = dma_wdata;
+        end else if (capture_valid) begin
+            c_write_enable = 1'b1;
+            c_write_addr = capture_address;
+            if (accumulate_q)
+                c_write_data = c_read_data + capture_result;
+            else
+                c_write_data = capture_result;
+        end
+    end
+
     always @* begin
         weight_bus = '0;
         for (bus_index = 0; bus_index < TILE_WORDS; bus_index = bus_index + 1)
@@ -258,6 +291,40 @@ module systolicforge_fpga_engine #(
         .results(array_results)
     );
 
+    // Memory and tile-storage writes deliberately have no asynchronous reset.
+    // Every location is initialized by the host or prefetch state before use.
+    // This coding style is required for FPGA RAM inference.
+    always_ff @(posedge clk) begin
+        if (program_we)
+            instruction_mem[program_addr] <= program_wdata;
+
+        if (dma_valid && dma_ready && dma_write) begin
+            case (dma_mem)
+                MEM_A: a_scratchpad[dma_addr] <= dma_wdata[DATA_W-1:0];
+                MEM_B: b_scratchpad[dma_addr] <= dma_wdata[DATA_W-1:0];
+                default: begin end
+            endcase
+        end
+
+        if (c_write_enable)
+            c_scratchpad[c_write_addr] <= c_write_data;
+
+        if (state_q == ST_PREFETCH_WEIGHTS) begin
+            if (((weight_index_q / ARRAY_COLS) < k_size_q) &&
+                ((weight_index_q % ARRAY_COLS) < n_size_q))
+                weight_tile_q[weight_index_q] <= b_read_data;
+            else
+                weight_tile_q[weight_index_q] <= '0;
+        end
+
+        if (state_q == ST_PREFETCH_ACTIVATIONS) begin
+            if (activation_index_q < k_size_q)
+                activation_tile_q[activation_index_q] <= a_read_data;
+            else
+                activation_tile_q[activation_index_q] <= '0;
+        end
+    end
+
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state_q <= ST_IDLE;
@@ -284,23 +351,6 @@ module systolicforge_fpga_engine #(
                 capture_row_q[sequential_idx] <= '0;
         end else begin
             done <= 1'b0;
-
-            if (program_we)
-                instruction_mem[program_addr] <= program_wdata;
-
-            if (dma_valid && dma_ready && dma_write) begin
-                case (dma_mem)
-                    MEM_A: a_scratchpad[dma_addr] <= dma_wdata[DATA_W-1:0];
-                    MEM_B: b_scratchpad[dma_addr] <= dma_wdata[DATA_W-1:0];
-                    MEM_C: c_scratchpad[dma_addr] <= dma_wdata;
-                    default: begin end
-                endcase
-            end else if (capture_valid) begin
-                if (accumulate_q)
-                    c_scratchpad[capture_address] <= c_read_data + capture_result;
-                else
-                    c_scratchpad[capture_address] <= capture_result;
-            end
 
             if (capture_valid)
                 capture_row_q[capture_column] <=
@@ -391,12 +441,6 @@ module systolicforge_fpga_engine #(
                 end
 
                 ST_PREFETCH_WEIGHTS: begin
-                    if (((weight_index_q / ARRAY_COLS) < k_size_q) &&
-                        ((weight_index_q % ARRAY_COLS) < n_size_q))
-                        weight_tile_q[weight_index_q] <= b_read_data;
-                    else
-                        weight_tile_q[weight_index_q] <= '0;
-
                     if (weight_index_q == TILE_WORDS - 1) begin
                         weight_index_q <= '0;
                         state_q <= ST_LOAD_WEIGHTS;
@@ -411,11 +455,6 @@ module systolicforge_fpga_engine #(
                 end
 
                 ST_PREFETCH_ACTIVATIONS: begin
-                    if (activation_index_q < k_size_q)
-                        activation_tile_q[activation_index_q] <= a_read_data;
-                    else
-                        activation_tile_q[activation_index_q] <= '0;
-
                     if (activation_index_q == ARRAY_ROWS - 1) begin
                         activation_index_q <= '0;
                         state_q <= ST_ISSUE;

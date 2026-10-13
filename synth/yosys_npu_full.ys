@@ -1,0 +1,12 @@
+read_verilog -sv rtl/systolic_pe.sv rtl/systolic_array.sv
+read_verilog -sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv
+read_verilog -sv rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv
+hierarchy -check -top systolicforge_soc
+synth_xilinx -family xc7 -top systolicforge_soc -noiopad
+flatten
+opt_clean
+check -assert
+select -assert-count 8 t:RAMB36E1
+stat -top systolicforge_soc
+write_json build/systolicforge_soc_full_xc7.json
+write_verilog -noattr build/systolicforge_soc_full_xc7.v

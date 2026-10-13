@@ -12,22 +12,28 @@ try {
         throw "example compilation failed"
     }
 
-    $output = Join-Path $buildDir "tb_systolicforge_soc.vvp"
-    iverilog -g2012 -Wall -Wno-sensitivity-entire-array `
-        -s tb_systolicforge_soc -o $output `
-        rtl\systolic_pe.sv `
-        rtl\systolic_array.sv `
-        rtl\systolicforge_npu.sv `
-        rtl\scratchpad_dma.sv `
-        rtl\systolicforge_soc.sv `
-        tb\tb_systolicforge_soc.sv
-    if ($LASTEXITCODE -ne 0) {
-        throw "iverilog compilation failed"
-    }
+    # Exercise original, compact, and full default scratchpad/IMEM capacities.
+    foreach ($addressWidth in @(8, 7, 12)) {
+        $instructionDepth = if ($addressWidth -eq 12) { 256 } else { 16 }
+        $output = Join-Path $buildDir "tb_systolicforge_soc_a$addressWidth.vvp"
+        iverilog -g2012 -Wall -Wno-sensitivity-entire-array `
+            -s tb_systolicforge_soc "-Ptb_systolicforge_soc.ADDR_W=$addressWidth" `
+            "-Ptb_systolicforge_soc.IMEM_DEPTH=$instructionDepth" -o $output `
+            rtl\systolic_pe.sv `
+            rtl\systolic_array.sv `
+            rtl\systolicforge_sdp_ram.sv `
+            rtl\systolicforge_npu.sv `
+            rtl\scratchpad_dma.sv `
+            rtl\systolicforge_soc.sv `
+            tb\tb_systolicforge_soc.sv
+        if ($LASTEXITCODE -ne 0) {
+            throw "iverilog compilation failed"
+        }
 
-    vvp $output
-    if ($LASTEXITCODE -ne 0) {
-        throw "integrated SoC simulation failed"
+        vvp $output
+        if ($LASTEXITCODE -ne 0) {
+            throw "integrated SoC simulation failed"
+        }
     }
 }
 finally {

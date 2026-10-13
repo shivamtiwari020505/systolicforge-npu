@@ -12,7 +12,7 @@ jobs:
       - name: Install RTL evidence tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y iverilog verilator yosys graphviz
+          sudo apt-get install -y iverilog verilator yosys graphviz python3-tk
       - name: Verify systolic array
         run: |
           mkdir -p build
@@ -21,11 +21,17 @@ jobs:
           vvp build/core.vvp
       - name: Verify array zero and accumulator-wrap edge cases
         run: make array-edges
+      - name: Verify synchronous full-depth memory foundation
+        run: make memory-foundation memory-foundation-synth
+      - name: Compare full-depth scheduled and legacy engines
+        run: make memory-redesign
+      - name: Check full-depth SoC block RAM inference
+        run: make synth-npu-full
       - name: Verify mini-NPU
         run: |
           iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
             -s tb_systolicforge_npu -o build/npu.vvp \
-            rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+            rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
             tb/tb_systolicforge_npu.sv
           vvp build/npu.vvp
       - name: Verify DMA
@@ -53,7 +59,7 @@ jobs:
             -o build/example_program --array-rows 8 --array-cols 8
           iverilog -g2012 -Wall -Wno-sensitivity-entire-array -s tb_compiled_program \
             -o build/compiled_program.vvp rtl/systolic_pe.sv \
-            rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+            rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
             tb/tb_compiled_program.sv
           vvp build/compiled_program.vvp
       - name: Verify integrated compiler-DMA-SoC path

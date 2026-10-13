@@ -6,10 +6,10 @@ module tb_compiled_program;
     localparam integer ARRAY_COLS = 8;
 `ifdef FPGA_ENGINE
     localparam integer ADDR_W = 7;
-    localparam integer MAX_EXECUTION_CYCLES = 1000;
+    localparam integer MAX_EXECUTION_CYCLES = 10000;
 `else
     localparam integer ADDR_W = 8;
-    localparam integer MAX_EXECUTION_CYCLES = 500;
+    localparam integer MAX_EXECUTION_CYCLES = 10000;
 `endif
     localparam integer IMEM_DEPTH = 16;
     localparam integer M = 6;
@@ -45,6 +45,7 @@ module tb_compiled_program;
     integer address;
     integer signed actual;
     integer signed expected;
+    integer read_timeout;
 
 `ifdef FPGA_ENGINE
     systolicforge_fpga_engine #(
@@ -164,9 +165,17 @@ module tb_compiled_program;
 
         for (address = 0; address < M*N; address = address + 1) begin
             @(negedge clk);
+            dma_valid = 1'b1;
+            dma_write = 1'b0;
             dma_mem = 2'd2;
             dma_addr = address;
             #1;
+            read_timeout = 0;
+            while (!dma_ready && read_timeout < 20) begin
+                @(negedge clk);
+                read_timeout = read_timeout + 1;
+            end
+            if (!dma_ready) $fatal(1, "compiled result read timed out");
             actual = $signed(dma_rdata);
             expected = $signed(expected_image[address]);
             if (actual !== expected) begin
@@ -176,6 +185,8 @@ module tb_compiled_program;
                 );
                 errors = errors + 1;
             end
+            @(negedge clk);
+            dma_valid = 1'b0;
         end
 
         if (errors == 0)
@@ -184,8 +195,8 @@ module tb_compiled_program;
                 PROGRAM_WORDS, M*N
             );
         else
-            $display("FAIL: %0d error(s)", errors);
-        $finish(errors != 0);
+            $fatal(1, "FAIL: %0d error(s)", errors);
+        $finish;
     end
 
 endmodule

@@ -8,8 +8,16 @@ retained button-driven self-test.
 The board configuration deliberately uses compact on-chip storage: 16
 instruction words and 128 words in each A/B/C scratchpad. This fits the supplied
 6×10 by 10×10 example while keeping the demonstration focused on the existing
-compiler-to-accelerator path. It is not the default-depth SoC configuration
-used by the separate out-of-context Vivado flow.
+compiler-to-accelerator path. The separate out-of-context Vivado flow uses the
+general NPU and DMA with an explicit `compact` or `full` memory profile; see
+[VIVADO_HANDOFF.md](../fpga/vivado/VIVADO_HANDOFF.md). The board build does not
+depend on that flow completing.
+
+The scratchpads use asynchronous reads with reset-free synchronous write
+processes so Vivado can infer distributed RAM. Only control state is reset.
+Keeping memory writes out of the asynchronously reset control process is an
+intentional implementation requirement; otherwise the C scratchpad becomes a
+large register bank with a timing-critical write mux.
 
 ## Build
 
@@ -75,6 +83,11 @@ and checks all 64 C words internally. It overwrites instruction locations 0–1 
 A/B locations 0–63, so host software should reload its workload afterward.
 The two-stage button synchronizer handles metastability; it is not a full
 mechanical debouncer.
+
+The button and UART RX inputs are explicitly constrained as asynchronous to
+the 100 MHz system clock, and their two-stage synchronizer registers carry the
+Vivado `ASYNC_REG` placement attribute. UART TX and the status LEDs have no
+external synchronous capture requirement.
 
 ## Reproducible pre-place checks
 

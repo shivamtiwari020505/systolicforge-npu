@@ -2,7 +2,7 @@
 #
 # Scope: 8x8 ISA-compatible FPGA engine, compact on-chip scratchpads, UART host
 # bridge, and the retained button-driven numerical self-test. Use
-# synth_npu_ooc.tcl for separate default-depth whole-SoC synthesis evidence.
+# synth_npu_ooc.tcl for separate whole-SoC synthesis with an explicit profile.
 
 set script_dir [file dirname [file normalize [info script]]]
 set repo_root  [file normalize [file join $script_dir ../..]]

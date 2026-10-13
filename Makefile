@@ -2,9 +2,9 @@ PYTHON ?= python3
 YOSYS ?= yosys
 YOSYS_DATDIR ?= /usr/share/yosys
 
-.PHONY: test core array-edges npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiled-e2e soc-e2e random-diff compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
+.PHONY: test core array-edges memory-foundation memory-foundation-synth npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiled-e2e soc-e2e random-diff compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core array-edges npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiler compiled-e2e soc-e2e random-diff
+test: core array-edges memory-foundation memory-redesign npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiler compiled-e2e soc-e2e random-diff
 
 build:
 	mkdir -p build
@@ -20,10 +20,32 @@ array-edges: build
 		tb/tb_systolic_array_arithmetic_edges.sv
 	vvp build/array_edges.vvp
 
+memory-foundation: build
+	iverilog -g2012 -Wall -s tb_systolicforge_sdp_ram \
+		-o build/memory_foundation.vvp rtl/systolicforge_sdp_ram.sv \
+		tb/tb_systolicforge_sdp_ram.sv
+	vvp build/memory_foundation.vvp
+
+memory-foundation-synth: build
+	$(YOSYS) -l build/yosys_memory_foundation.log \
+		-s synth/yosys_memory_foundation.ys
+
+.PHONY: memory-redesign synth-npu-full
+memory-redesign: build
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_npu_memory_redesign -o build/memory_redesign.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv \
+		rtl/systolicforge_npu.sv tb/reference/systolicforge_npu_legacy.sv \
+		tb/tb_npu_memory_redesign.sv
+	vvp build/memory_redesign.vvp
+
+synth-npu-full: build
+	$(YOSYS) -l build/yosys_npu_full.log -s synth/yosys_npu_full.ys
+
 npu: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_npu -o build/npu.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		tb/tb_systolicforge_npu.sv
 	vvp build/npu.vvp
 
@@ -35,7 +57,7 @@ dma: build
 faults: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_fault_reporting -o build/faults.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_fault_reporting.sv
 	vvp build/faults.vvp
@@ -43,7 +65,7 @@ faults: build
 axi-lite: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_axi_lite -o build/axi_lite.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		rtl/systolicforge_axi_lite.sv tb/tb_systolicforge_axi_lite.sv
 	vvp build/axi_lite.vvp
@@ -82,12 +104,12 @@ lint:
 	verilator --lint-only --timing -Wall \
 		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL \
 		--top-module systolicforge_soc \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv
 	verilator --lint-only --timing -Wall \
 		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL \
 		--top-module systolicforge_axi_lite \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		rtl/systolicforge_axi_lite.sv
 	verilator --lint-only --timing -Wall \
@@ -103,7 +125,7 @@ compiled-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_compiled_program -o build/compiled_program.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		tb/tb_compiled_program.sv
 	vvp build/compiled_program.vvp
 
@@ -111,10 +133,24 @@ soc-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_soc -o build/soc.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_systolicforge_soc.sv
 	vvp build/soc.vvp
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_systolicforge_soc -Ptb_systolicforge_soc.ADDR_W=7 \
+		-o build/soc_ooc_compact.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
+		tb/tb_systolicforge_soc.sv
+	vvp build/soc_ooc_compact.vvp
+	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
+		-s tb_systolicforge_soc -Ptb_systolicforge_soc.ADDR_W=12 \
+		-Ptb_systolicforge_soc.IMEM_DEPTH=256 -o build/soc_full.vvp \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv \
+		rtl/systolicforge_npu.sv rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
+		tb/tb_systolicforge_soc.sv
+	vvp build/soc_full.vvp
 
 random-diff: build
 	$(PYTHON) scripts/run_randomized_differential.py
@@ -139,7 +175,7 @@ waveforms: build
 	vvp build/waves/core.vvp
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DDUMP_VCD \
 		-s tb_systolicforge_npu -o build/waves/npu.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		tb/tb_systolicforge_npu.sv
 	vvp build/waves/npu.vvp
 	$(PYTHON) scripts/render_waveforms.py build/waves docs/diagrams
@@ -151,4 +187,4 @@ diagrams:
 	dot -Tsvg docs/diagrams/array_microarchitecture.dot \
 		-o docs/diagrams/array_microarchitecture.svg
 
-evidence: test lint gate-sim synth-xc7 waveforms diagrams
+evidence: test lint gate-sim memory-foundation-synth synth-npu-full synth-xc7 waveforms diagrams

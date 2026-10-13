@@ -6,13 +6,18 @@ There are two intentionally separate Vivado flows:
 
 | Flow | Top module | Scope | Result type |
 |---|---|---|---|
-| Whole-NPU synthesis | `systolicforge_soc` | 8x8 array, instruction sequencer, scratchpads, and DMA | Out-of-context post-synthesis checkpoint and pre-place reports |
+| Full whole-NPU synthesis | `systolicforge_soc` | 8x8 array, general NPU, DMA, 4096 words per scratchpad, 256 instructions | Out-of-context post-synthesis checkpoint and pre-place reports for this configuration only |
 | Basys3 implementation | `systolicforge_fpga_uart_demo` | Compact 8x8 ISA engine, USB-UART loader, and shared-engine numerical self-test | Placed-and-routed checkpoint, reports, and board bitstream |
 
 The Basys3 configuration contains an ISA-compatible instruction sequencer and
 A/B/C scratchpads, but reduces them to 16 instruction words and 128 words per
-scratchpad. The whole-NPU flow retains the default-depth SoC and DMA. Keep
-those configuration-specific claims separate.
+scratchpad. The compact OOC profile has the same capacities but retains the
+general NPU and DMA, using synchronous block RAM and scheduled accesses. The
+Basys3 engine uses distributed RAM and a separate schedule. Keep their results separate.
+
+Run the Basys3 implementation first. It is independent of the OOC flow and
+does not need its checkpoint. Neither profile has a guaranteed run time or
+timing result until its Vivado reports are available.
 
 ## Requirements
 
@@ -21,12 +26,14 @@ those configuration-specific claims separate.
 - A shell in which the `vivado` executable is available.
 - A Digilent Basys3 only for the programming/test stage.
 
-Run all commands from the repository root. Do not edit array or memory
-parameters merely to make a failing build pass; return the failure log instead.
+Run all commands from the repository root in a fresh extraction. Select the
+documented OOC profile explicitly; preserve its parameters in any published
+results. Return failure logs without making undocumented parameter changes.
 
 ## Flow A: synthesize the complete NPU IP
 
-This non-project flow synthesizes the complete default integration target:
+This non-project flow synthesizes all integration blocks with explicitly
+selected memory capacities:
 
 - 8x8 physical systolic array;
 - signed INT8 activations and weights;
@@ -35,42 +42,69 @@ This non-project flow synthesizes the complete default integration target:
 - A/B/C scratchpads;
 - burst DMA and external request/response interface.
 
+The general NPU now uses scheduled synchronous SDP storage. Select `full` for
+the next run: 4096 words per A/B/C scratchpad, 256 instructions, an 8x8 array
+and DMA. The instruction encoding and host registers are unchanged. Execution
+latency increases because each row finishes C writeback before the next starts.
+
+The interrupted 2026-10-12 run used behavioral multi-port arrays. That engine
+is retained only in `tb/reference/` for simulation comparisons. The current
+synthesis sources include the synchronous RAM primitive and use normal memory
+inference without a dissolve-limit override.
+
+Complete default SoC Yosys mapping passes structural checks and the eight-BRAM
+assertion. Simulation includes the full 4096/256 compiler-DMA-SoC test and 32
+legacy/golden comparisons. Vivado and routed evidence need the external rerun.
+
+The optional `compact` profile selects 128 words per scratchpad and 16
+instructions through the same scheduled engine. Archive capacities separately.
+An omitted profile stops before synthesis.
+
 On Windows Command Prompt or a Vivado-enabled shell:
 
 ```bat
-mkdir build\vivado_npu_ooc
-vivado -mode batch -source fpga/vivado/synth_npu_ooc.tcl -log build/vivado_npu_ooc/vivado.log -journal build/vivado_npu_ooc/vivado.jou
+mkdir build\vivado_npu_ooc_full
+vivado -mode batch -source fpga/vivado/synth_npu_ooc.tcl -log build/vivado_npu_ooc_full/vivado.log -journal build/vivado_npu_ooc_full/vivado.jou -tclargs full
 ```
 
 Expected artifacts:
 
 ```text
-build/vivado_npu_ooc/build_manifest.txt
-build/vivado_npu_ooc/post_synth_npu.dcp
-build/vivado_npu_ooc/npu_post_synth.v
-build/vivado_npu_ooc/npu_post_synth.xdc
-build/vivado_npu_ooc/utilization_synth.rpt
-build/vivado_npu_ooc/utilization_hierarchical_synth.rpt
-build/vivado_npu_ooc/timing_summary_synth.rpt
-build/vivado_npu_ooc/methodology_synth.rpt
-build/vivado_npu_ooc/drc_synth.rpt
-build/vivado_npu_ooc/vivado.log
-build/vivado_npu_ooc/vivado.jou
+build/vivado_npu_ooc_full/build_manifest.txt
+build/vivado_npu_ooc_full/post_synth_npu.dcp
+build/vivado_npu_ooc_full/npu_post_synth.v
+build/vivado_npu_ooc_full/npu_post_synth.xdc
+build/vivado_npu_ooc_full/utilization_synth.rpt
+build/vivado_npu_ooc_full/utilization_hierarchical_synth.rpt
+build/vivado_npu_ooc_full/timing_summary_synth.rpt
+build/vivado_npu_ooc_full/methodology_synth.rpt
+build/vivado_npu_ooc_full/drc_synth.rpt
+build/vivado_npu_ooc_full/vivado.log
+build/vivado_npu_ooc_full/vivado.jou
 ```
 
 Success criteria:
 
 - Vivado exits with code zero.
+- The manifest records `profile=full`, `scratchpad_words_per_memory=4096`,
+  `instruction_words=256`, and `completed_utc`. Configuration is recorded before
+  synthesis so aborted runs retain provenance; completion requires all reports.
 - `synth_design` completes for `systolicforge_soc` without black boxes.
 - The checkpoint and all reports exist and are non-empty.
 - The hierarchical utilization report contains the array, NPU, and DMA
   hierarchy.
 - Any inferred-memory warnings or large register/LUT structures are preserved
   for architectural review rather than hidden.
+- Capacity overuse, if reported, is recorded as a limitation rather than
+  presented as a successful Basys3 implementation.
 
 The timing report is a 10 ns out-of-context, post-synthesis estimate. It does
 not include downstream I/O delays, placement, routing, or final SRAM bindings and
 must not be presented as the product's achieved frequency.
+
+The script checks that block RAM was inferred and records its count before
+marking the run complete. Preserve warnings and hierarchical reports for
+review. No memory-dissolve-limit override is enabled.
 
 ## Flow B: implement the UART-programmable Basys3 demo
 
@@ -170,7 +204,7 @@ Retain both complete build directories without deleting warnings or intermediate
 reports:
 
 ```text
-build/vivado_npu_ooc/
+build/vivado_npu_ooc_full/
 build/vivado_basys3/
 ```
 
@@ -178,6 +212,8 @@ Also retain:
 
 - Vivado version and operating system;
 - the exact source archive or Git commit used;
+- the OOC profile and memory capacities; retain the interrupted full-depth
+  logs separately if available;
 - a photo or short video showing LED0 asserted after the button test;
 - the host utility log showing PING plus a full compiler/upload/result check;
 - a note describing every critical warning or error;

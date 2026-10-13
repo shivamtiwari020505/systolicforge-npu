@@ -94,8 +94,8 @@ module systolicforge_fpga_uart_demo #(
     logic [3:0] npu_fault_code;
     logic [IMEM_ADDR_W-1:0] npu_pc;
 
-    logic start_meta_q;
-    logic start_sync_q;
+    (* ASYNC_REG = "TRUE" *) logic start_meta_q;
+    (* ASYNC_REG = "TRUE" *) logic start_sync_q;
     logic start_prev_q;
     logic self_request_q;
     self_state_t self_state_q;

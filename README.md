@@ -72,6 +72,7 @@ The local regression currently passes:
 |---|---|---:|
 | Systolic core | A=6x4 and B=4x4 on a physical 4x4 array; signed values, lane order, input bubble | PASS |
 | Array arithmetic edges | Zero activations with nonzero weights; forced signed accumulator wrap in a 4x4/INT16 verification configuration | PASS |
+| Memory redesign foundation | Full 4096-word synchronous SDP address range, registered-read hold, and read-first collision contract | PASS |
 | Mini-NPU | A=3x6 and B=6x3 on a physical 4x4 array; K split 4+2, accumulation, strides | PASS |
 | DMA | Five-word external→local and local→external bursts | PASS |
 | Fault safety | Opcode, dimension, PC, scratchpad, DMA selector/range, no-op, and recovery cases | PASS |
@@ -82,8 +83,9 @@ The local regression currently passes:
 | Compiler | Encoding, M/K/N tiling, images, golden output, errors | PASS |
 | Compiler → RTL | Generated five-word program and 60 golden outputs | PASS |
 | Integrated SoC | DMA-loaded A/B through stalled external memory, compute arbitration, and DMA-stored 60-word C | PASS |
+| Full-depth memory redesign | 4096/256 SoC; 32 legacy/golden comparisons, boundary/overflow/reset/read stalls; full SoC maps to 8 block RAMs (Yosys) | PASS |
 | Generic synthesis | 64 PEs, structural check, synthesized-netlist simulation | PASS |
-| Xilinx-7 mapping | UART/engine top: 72 DSP48E1, 8,021 LUT primitives, and 12,458 flip-flops (pre-place) | PASS |
+| Xilinx-7 mapping | UART/engine top: 72 DSP48E1, 56 distributed-RAM primitives, 2,677 LUT primitives, and 4,314 flip-flops (pre-place) | PASS |
 
 The waveform figures are generated from Icarus VCD traces, and the block
 diagrams are rendered from committed Graphviz sources. Their reproduction
@@ -214,3 +216,14 @@ The detailed design is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the
 binary contract is in [docs/ISA.md](docs/ISA.md), and synthesis evidence is in
 [docs/SYNTHESIS.md](docs/SYNTHESIS.md). Contributions are welcome; see
 [CONTRIBUTING.md](CONTRIBUTING.md) for the verification and evidence policy.
+
+The staged full-depth synchronous-memory migration and its acceptance gates are
+defined in
+[docs/MEMORY_ARCHITECTURE_REDESIGN.md](docs/MEMORY_ARCHITECTURE_REDESIGN.md).
+
+The migration is implemented in the general NPU. It prefetches weights and A
+rows through synchronous RAM and commits each row's C writes before issuing
+another row. The five-word example takes 1246 compute cycles; the array's
+64-MAC/cycle capability remains a theoretical datapath peak. Reproduce the
+full-depth comparisons and memory mapping with `make memory-redesign
+synth-npu-full`. Vivado confirmation remains pending.

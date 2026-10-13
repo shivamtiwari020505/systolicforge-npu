@@ -1,11 +1,12 @@
 `timescale 1ns/1ps
 
-module tb_systolicforge_soc;
+module tb_systolicforge_soc #(
+    parameter integer ADDR_W = 8,
+    parameter integer IMEM_DEPTH = 16
+);
 
     localparam integer ARRAY_ROWS = 8;
     localparam integer ARRAY_COLS = 8;
-    localparam integer ADDR_W = 8;
-    localparam integer IMEM_DEPTH = 16;
     localparam integer EXT_ADDR_W = 32;
     localparam integer EXT_WORDS = 1024;
     localparam integer EXT_WORD_ADDR_W = $clog2(EXT_WORDS);
@@ -70,6 +71,11 @@ module tb_systolicforge_soc;
     integer read_request_stalls;
     integer write_request_stalls;
     integer protocol_errors;
+    logic write_stall_forced;
+    logic request_stalled_q;
+    logic [EXT_ADDR_W-1:0] stalled_addr_q;
+    logic [31:0] stalled_data_q;
+    logic stalled_write_q;
 
     integer address;
     integer errors;
@@ -115,8 +121,27 @@ module tb_systolicforge_soc;
 
     always #5 clk = ~clk;
 
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            request_stalled_q <= 1'b0;
+            stalled_addr_q <= '0;
+            stalled_data_q <= '0;
+            stalled_write_q <= 1'b0;
+        end else begin
+            if (request_stalled_q && (!ext_req_valid ||
+                ext_req_addr !== stalled_addr_q || ext_req_write !== stalled_write_q ||
+                (stalled_write_q && ext_req_wdata !== stalled_data_q)))
+                $fatal(1, "external request changed under backpressure");
+            request_stalled_q <= ext_req_valid && !ext_req_ready;
+            stalled_addr_q <= ext_req_addr;
+            stalled_data_q <= ext_req_wdata;
+            stalled_write_q <= ext_req_write;
+        end
+    end
+
     // Apply deterministic request backpressure on one out of every four cycles.
-    assign ext_req_ready = rst_n && (memory_cycle[1:0] != 2'b01);
+    assign ext_req_ready = rst_n && (memory_cycle[1:0] != 2'b01) &&
+                          !(ext_req_valid && ext_req_write && !write_stall_forced);
 
     // External memory accepts one outstanding read and returns it after a
     // deterministic one-to-four-cycle delay. Writes commit on request handshake.
@@ -133,6 +158,7 @@ module tb_systolicforge_soc;
             read_request_stalls <= 0;
             write_request_stalls <= 0;
             protocol_errors     <= 0;
+            write_stall_forced   <= 1'b0;
         end else begin
             memory_cycle  <= memory_cycle + 1;
             ext_rsp_valid <= 1'b0;
@@ -157,9 +183,10 @@ module tb_systolicforge_soc;
             end
 
             if (ext_req_valid && !ext_req_ready) begin
-                if (ext_req_write)
+                if (ext_req_write) begin
+                    write_stall_forced <= 1'b1;
                     write_request_stalls <= write_request_stalls + 1;
-                else
+                end else
                     read_request_stalls <= read_request_stalls + 1;
             end
 
@@ -224,8 +251,12 @@ module tb_systolicforge_soc;
                 dma_cmd_local_addr = local_base;
                 dma_cmd_ext_addr   = external_base;
                 dma_cmd_length     = length;
+                // A simultaneous compute request must lose to the accepted DMA.
+                start = 1'b1;
                 @(negedge clk);
                 dma_cmd_valid      = 1'b0;
+                start = 1'b0;
+                if (busy) $fatal(1, "simultaneous DMA/start arbitration failed");
                 if ((length != 0) && !dma_busy) begin
                     $display("ERROR: DMA did not enter busy after command acceptance");
                     errors = errors + 1;
@@ -311,7 +342,7 @@ module tb_systolicforge_soc;
 
         pulse_start();
         compute_cycles = 0;
-        while (!done && compute_cycles < 1000) begin
+        while (!done && compute_cycles < 10000) begin
             @(negedge clk);
             compute_cycles = compute_cycles + 1;
             if (busy && dma_cmd_ready) begin
@@ -373,10 +404,12 @@ module tb_systolicforge_soc;
                 "INFO: %0d compute cycles, %0d read stalls, %0d write stalls",
                 compute_cycles, read_request_stalls, write_request_stalls
             );
+            $display("INFO: scratchpad words=%0d, instruction words=%0d",
+                     (1 << ADDR_W), IMEM_DEPTH);
         end else begin
-            $display("FAIL: %0d integrated SoC error(s)", errors);
+            $fatal(1, "FAIL: %0d integrated SoC error(s)", errors);
         end
-        $finish(errors != 0);
+        $finish;
     end
 
 endmodule

@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 
 & (Join-Path $PSScriptRoot "run_core_sim.ps1")
 & (Join-Path $PSScriptRoot "run_array_edge_cases_sim.ps1")
+& (Join-Path $PSScriptRoot "run_memory_foundation_sim.ps1")
+& (Join-Path $PSScriptRoot "run_memory_redesign_sim.ps1")
 & (Join-Path $PSScriptRoot "run_npu_sim.ps1")
 & (Join-Path $PSScriptRoot "run_dma_sim.ps1")
 & (Join-Path $PSScriptRoot "run_fault_sim.ps1")

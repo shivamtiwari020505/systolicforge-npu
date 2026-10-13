@@ -341,7 +341,7 @@ module tb_systolicforge_axi_lite;
     task automatic wait_for_irq;
         begin
             timeout = 0;
-            while (!irq && timeout < 500) begin
+            while (!irq && timeout < 5000) begin
                 @(negedge clk);
                 timeout = timeout + 1;
             end
@@ -523,8 +523,8 @@ module tb_systolicforge_axi_lite;
         if (errors == 0)
             $display("PASS: AXI4-Lite host control, DMA, faults, and IRQs");
         else
-            $display("FAIL: %0d AXI4-Lite integration error(s)", errors);
-        $finish(errors != 0);
+            $fatal(1, "FAIL: %0d AXI4-Lite integration error(s)", errors);
+        $finish;
     end
 
 endmodule

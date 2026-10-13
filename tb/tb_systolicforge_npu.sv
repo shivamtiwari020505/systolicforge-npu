@@ -140,12 +140,23 @@ module tb_systolicforge_npu;
     endtask
 
     task automatic read_c(input integer address, output integer signed data);
+        integer wait_cycles;
         begin
             @(negedge clk);
+            dma_valid = 1'b1;
+            dma_write = 1'b0;
             dma_mem  = 2'd2;
             dma_addr = address;
             #1;
+            wait_cycles = 0;
+            while (!dma_ready && wait_cycles < 20) begin
+                @(negedge clk);
+                wait_cycles = wait_cycles + 1;
+            end
+            if (!dma_ready) $fatal(1, "C read timed out");
             data = $signed(dma_rdata);
+            @(negedge clk);
+            dma_valid = 1'b0;
         end
     endtask
 
@@ -201,7 +212,7 @@ module tb_systolicforge_npu;
         start = 1'b0;
 
         cycles = 0;
-        while (!done && cycles < 200) begin
+        while (!done && cycles < 2000) begin
             @(negedge clk);
             cycles = cycles + 1;
         end
@@ -237,9 +248,9 @@ module tb_systolicforge_npu;
         if (errors == 0)
             $display("PASS: mini-NPU executed two tiled MATMUL instructions in %0d cycles", cycles);
         else
-            $display("FAIL: %0d error(s)", errors);
+            $fatal(1, "FAIL: %0d error(s)", errors);
 
-        $finish(errors != 0);
+        $finish;
     end
 
 endmodule

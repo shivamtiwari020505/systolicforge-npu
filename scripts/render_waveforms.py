@@ -137,9 +137,14 @@ def bus_decimal(value: str, _width: int) -> str:
 STATE_NAMES = {
     0: "IDLE",
     1: "FETCH",
-    2: "LOAD_W",
-    3: "STREAM",
-    4: "DRAIN",
+    2: "DECODE",
+    3: "W_REQ",
+    4: "W_CAPTURE",
+    5: "LOAD_W",
+    6: "A_REQ",
+    7: "A_CAPTURE",
+    8: "ISSUE",
+    9: "DRAIN",
 }
 
 
@@ -375,7 +380,7 @@ make waveforms
 
 The mini-NPU testbench observes `done` {done_cycle} falling-edge sample intervals
 after the start pulse is accepted. This is the same execution reported by the
-self-checking simulation as 23 cycles. Sampling on falling edges shows stable
+self-checking simulation as {done_cycle} cycles. Sampling on falling edges shows stable
 state after positive-edge sequential logic has settled.
 
 The VCD files stay under `build/waves/` and are intentionally ignored by Git.

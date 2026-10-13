@@ -42,6 +42,12 @@ for i in 0 .. m-1
 All operands are signed INT8, and the sum and C are signed INT32. There is no
 rounding, activation, saturation, or requantization instruction in this version.
 
+The scheduled general NPU commits C in increasing row/column order, as in the
+pseudocode above, including overlapping C strides. The saved legacy engine
+could issue conflicting writes for those shapes, so legacy equivalence is
+checked for non-overlapping C; overlapping C uses the ISA's ordered semantics.
+Accumulation wraps at INT32 width. Execution cycles are not part of the ISA.
+
 ## Bounds checks
 
 Before a `MATMUL` changes architectural state, hardware computes the highest

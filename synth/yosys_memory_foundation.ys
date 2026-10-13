@@ -1,0 +1,9 @@
+read_verilog -sv rtl/systolicforge_sdp_ram.sv
+read_verilog -sv synth/systolicforge_memory_smoke.sv
+hierarchy -check -top systolicforge_memory_smoke
+synth_xilinx -family xc7 -top systolicforge_memory_smoke
+flatten
+opt_clean
+check -assert
+select -assert-count 8 t:RAMB36E1
+stat -top systolicforge_memory_smoke
