@@ -196,7 +196,7 @@ module systolicforge_axi_lite #(
             $error("AXI-Lite addressable fields must fit in 32-bit registers");
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             aw_pending_q    <= 1'b0;
             awaddr_q        <= '0;

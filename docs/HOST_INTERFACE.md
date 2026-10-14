@@ -167,7 +167,10 @@ only when `dma_ready` is high. A new read takes one clock edge; responses hold
 while the request is held, including external DMA stalls. Idle command-ready
 behavior and the software-visible register map are unchanged. Simultaneous
 SoC compute-start and accepted DMA-command requests give priority to DMA.
-Reset flushes control/pending responses without clearing RAM; initialize all
+Reset flushes control/pending responses without clearing RAM. Reset control
+by holding active-low `rst_n` across a rising clock edge. The AXI, DMA,
+NPU and PE control resets are synchronous; short between-edge pulses are not a
+reset contract. Initialize all
 memory words that a program reads before use. Instruction writes during
 compute are ignored at the NPU port and rejected by the AXI wrapper.
 

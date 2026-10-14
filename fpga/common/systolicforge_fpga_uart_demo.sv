@@ -50,6 +50,9 @@ module systolicforge_fpga_uart_demo #(
     } self_state_t;
 
     logic rst_n;
+    // Synchronize the board reset before it reaches RAM/DSP control state.
+    // INIT holds the design in reset during the first two oscillator edges.
+    (* ASYNC_REG = "TRUE" *) logic [1:0] reset_sync_q = 2'b11;
 
     logic [7:0] rx_data;
     logic rx_data_valid;
@@ -186,7 +189,9 @@ module systolicforge_fpga_uart_demo #(
         end
     endfunction
 
-    assign rst_n = !reset_button;
+    always_ff @(posedge clk)
+        reset_sync_q <= {reset_sync_q[0], reset_button};
+    assign rst_n = !reset_sync_q[1];
     assign execute_request = request_pending_q && !response_active_q;
     assign self_active = (self_state_q != SELF_IDLE) && (self_state_q != SELF_DONE);
     assign parser_idle = (payload_expected_q == 0) && !request_pending_q &&
@@ -390,7 +395,7 @@ module systolicforge_fpga_uart_demo #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             start_meta_q <= 1'b0;
             start_sync_q <= 1'b0;
@@ -408,7 +413,7 @@ module systolicforge_fpga_uart_demo #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             command_q <= '0;
             payload_expected_q <= '0;
@@ -472,7 +477,7 @@ module systolicforge_fpga_uart_demo #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             self_state_q <= SELF_IDLE;
             self_addr_q <= '0;
@@ -560,7 +565,7 @@ module systolicforge_fpga_uart_demo #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             done_sticky_q <= 1'b0;
         end else begin

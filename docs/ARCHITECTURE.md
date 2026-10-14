@@ -5,7 +5,12 @@ claim is tied to a named module or to a measured simulation trace; proposed
 features are not shown as implemented blocks.
 
 The full-depth synchronous-memory replacement is implemented and locally
-verified; Vivado and board evidence remain pending. Its fixed
+verified; the initial Vivado full-profile run confirmed eight BRAMs but failed
+its timing estimate. The October 14 correction run passes full-NPU synthesis
+with eight BRAMs and a positive setup estimate; the separate compact Basys3
+demo meets routed 100 MHz timing and generates a bitstream. Full-NPU routed
+and physical-board evidence remain pending. See the
+[archived reports](evidence/vivado/2026-10-14/README.md). Its fixed
 interfaces, memory contract, migration stages, and acceptance criteria are in
 [MEMORY_ARCHITECTURE_REDESIGN.md](MEMORY_ARCHITECTURE_REDESIGN.md).
 
@@ -211,8 +216,8 @@ in the saved legacy engine could collide.
 ![Current scheduled-NPU waveform](diagrams/npu_instruction_waveform.svg)
 
 The 4x4 mini-NPU test executes A=3x6 and B=6x3 as K=4 replace and K=2 accumulate,
-then HALT. It takes **82 simulation cycles** and verifies all nine C words.
-The compiler-generated 8x8 example takes **478 compute cycles** and verifies
+then HALT. It takes **90 simulation cycles** and verifies all nine C words.
+The compiler-generated 8x8 example takes **494 compute cycles** and verifies
 all 60 C words, including the full 4096/256 SoC configuration. The 10 ns
 simulation clock is a stimulus, not routed frequency evidence.
 

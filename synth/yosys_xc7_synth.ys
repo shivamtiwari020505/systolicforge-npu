@@ -1,5 +1,5 @@
 read_verilog -sv rtl/systolic_pe.sv
-read_verilog -sv rtl/systolic_array.sv
+read_verilog -sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv
 read_verilog -sv fpga/common/systolicforge_fpga_engine.sv
 read_verilog -sv fpga/common/systolicforge_uart_rx.sv
 read_verilog -sv fpga/common/systolicforge_uart_tx.sv

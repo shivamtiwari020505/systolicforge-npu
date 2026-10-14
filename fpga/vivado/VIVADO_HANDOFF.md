@@ -21,6 +21,18 @@ timing result until its Vivado reports are available.
 
 ## Requirements
 
+The preferred Windows launcher is now:
+
+```bat
+fpga\vivado\run_vivado.cmd all
+```
+
+It runs each flow independently in a fresh timestamped directory under
+`build/vivado_runs/`, creates log directories before Vivado starts, records
+source SHA-256 hashes even without Git, and packages complete results including
+failure logs. Use `full` or `basys3` instead of `all` for an individual run.
+See [FPGA_RERUN.md](../../FPGA_RERUN.md) for the current closure handoff.
+
 - Xilinx Vivado with support for the Artix-7 `xc7a35tcpg236-1` device.
 - A complete copy of the repository, preserving its directory structure.
 - A shell in which the `vivado` executable is available.
@@ -50,7 +62,8 @@ latency increases because each row finishes C writeback before the next starts.
 The current version pipelines active-lane reads and overlaps A prefetch using
 two activation buffers. The compiler example takes 478 compute cycles locally,
 versus 1246 for the initial synchronous design. The build manifest records the
-prefetch mode and buffer count. Routed frequency still needs Vivado evidence.
+prefetch mode and buffer count. Full-NPU routed frequency remains unvalidated;
+the separate compact Basys3 run now has archived 100 MHz routed evidence.
 
 The interrupted 2026-10-12 run used behavioral multi-port arrays. That engine
 is retained only in `tb/reference/` for simulation comparisons. The current
@@ -59,7 +72,12 @@ inference without a dissolve-limit override.
 
 Complete default SoC Yosys mapping passes structural checks and the eight-BRAM
 assertion. Simulation includes the full 4096/256 compiler-DMA-SoC test and 32
-legacy/golden comparisons. Vivado and routed evidence need the external rerun.
+legacy/golden comparisons. The October 13 full-profile Vivado run confirmed
+eight BRAMs but its estimated WNS was -7.392 ns. Staged validation, incrementing
+row pointers and synchronous control resets passed the October 14 full-profile
+setup estimate (+2.098 ns), with eight BRAMs. The compact Basys3 run separately
+meets routed timing and generates a bitstream. The example takes 494 compute
+cycles. See [the archives](../../docs/evidence/vivado/2026-10-14/README.md).
 
 The optional `compact` profile selects 128 words per scratchpad and 16
 instructions through the same scheduled engine. Archive capacities separately.
@@ -163,6 +181,7 @@ is negative. A successful board build requires:
 
 - routing completed with no routing errors;
 - non-negative routed setup WNS against the 10.000 ns clock;
+- non-negative routed hold slack;
 - no DRC errors that block bitstream generation;
 - a generated `.bit` file.
 

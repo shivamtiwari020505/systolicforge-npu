@@ -27,7 +27,7 @@ module systolicforge_uart_tx #(
 
     assign data_ready = (state_q == TX_IDLE);
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             state_q <= TX_IDLE;
             count_q <= '0;

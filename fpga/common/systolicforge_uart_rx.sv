@@ -30,7 +30,7 @@ module systolicforge_uart_rx #(
 
     assign data = data_q;
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             rx_meta_q <= 1'b1;
             rx_sync_q <= 1'b1;
@@ -40,7 +40,7 @@ module systolicforge_uart_rx #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             state_q       <= RX_IDLE;
             count_q       <= '0;

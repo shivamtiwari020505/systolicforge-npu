@@ -75,12 +75,14 @@ module systolic_array #(
 
     integer row_idx;
     integer delay_idx;
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
-            for (row_idx = 0; row_idx < ROWS; row_idx = row_idx + 1) begin
+            for (row_idx = 1; row_idx < ROWS; row_idx = row_idx + 1) begin
                 for (delay_idx = 0; delay_idx < ROWS; delay_idx = delay_idx + 1) begin
-                    row_skew_data[row_idx][delay_idx]  <= '0;
-                    row_skew_valid[row_idx][delay_idx] <= 1'b0;
+                    if (delay_idx < row_idx) begin
+                        row_skew_data[row_idx][delay_idx]  <= '0;
+                        row_skew_valid[row_idx][delay_idx] <= 1'b0;
+                    end
                 end
             end
         end else begin

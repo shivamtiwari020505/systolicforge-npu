@@ -33,8 +33,11 @@ be elaborated as a 16×16 array when the target has enough resources.
 **Project status:** the directed and randomized RTL regressions,
 compiler-to-RTL flow, UART-programmable FPGA regression, lint, generic netlist
 simulation, and Xilinx-7 resource mapping are reproducible and passing.
-Routed Basys3 timing/bitstream evidence and Sky130 post-route PPA remain external
-tool milestones, so this repository does not claim those results yet.
+Archived Vivado 2025.2 evidence now includes full-NPU synthesis with eight BRAMs
+and a +2.098 ns setup estimate, plus Basys3 100 MHz routed timing (+0.036 ns
+setup, +0.067 ns hold) and a generated bitstream. Physical board validation and
+Sky130 post-route PPA remain pending. See the
+[October 14 evidence](docs/evidence/vivado/2026-10-14/README.md).
 
 ## Architecture at a glance
 
@@ -191,10 +194,10 @@ python scripts/collect_openlane_metrics.py <openlane-run-directory>
 ```
 
 Generic and Xilinx-7 synthesis have been run with Yosys 0.33; the reproducible
-results are recorded in [docs/SYNTHESIS.md](docs/SYNTHESIS.md). Vivado,
-OpenLane/OpenROAD, and a Sky130 PDK are not installed, so post-route FPGA timing
-and ASIC PPA numbers are deliberately not claimed yet. The supplied flows
-generate those reports on a machine with the corresponding tools installed.
+results are recorded in [docs/SYNTHESIS.md](docs/SYNTHESIS.md). External Vivado
+results for full-NPU synthesis and the routed Basys3 bitstream are archived.
+They are not physical-board measurements; ASIC PPA remains unreported. The
+supplied flows reproduce reports on machines with the corresponding tools.
 
 ## Repository map
 
@@ -224,7 +227,11 @@ defined in
 The migration is implemented in the general NPU. It pipelines active weight
 and A reads through synchronous RAM, overlaps A prefetch through two buffers,
 and commits each row's C writes before issuing another row. The five-word
-example takes 478 compute cycles (initial synchronous version: 1246); the array's
+example takes 494 compute cycles after staged validation (prefetch-only version:
+478; initial synchronous version: 1246); the array's
 64-MAC/cycle capability remains a theoretical datapath peak. Reproduce the
 full-depth comparisons and memory mapping with `make memory-redesign
-synth-npu-full`. Vivado confirmation remains pending.
+synth-npu-full`. The October 13 Vivado full-profile run confirmed eight BRAMs
+but failed its post-synthesis 100 MHz estimate. The October 14 correction run
+passes that estimate; the compact Basys3 demo also meets routed timing and
+generates a bitstream. See [FPGA_CLOSURE.md](docs/FPGA_CLOSURE.md).

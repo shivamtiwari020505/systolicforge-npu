@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2025.2 (64-bit)
+# SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+# IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+# SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+# Start of session at: Wed Oct 14 00:08:41 2026
+# Process ID         : 10684
+# Current directory  : C:/shivami/systolicforge-fpga-closure-v5-launcher-fix
+# Command line       : vivado.exe -mode batch -source fpga/vivado/build_basys3.tcl -log build/vivado_basys3/vivado.log -journal build/vivado_basys3/vivado.jou
+# Log file           : C:/shivami/systolicforge-fpga-closure-v5-launcher-fix/build/vivado_basys3/vivado.log
+# Journal file       : C:/shivami/systolicforge-fpga-closure-v5-launcher-fix\build/vivado_basys3/vivado.jou
+# Running On         : LAPTOP-FNG4RD0K
+# Platform           : Windows Server 2016 or Windows 10
+# Operating System   : 26200
+# Processor Detail   : 12th Gen Intel(R) Core(TM) i5-12450H
+# CPU Frequency      : 2496 MHz
+# CPU Physical cores : 8
+# CPU Logical cores  : 12
+# Host memory        : 16890 MB
+# Swap memory        : 15569 MB
+# Total Virtual      : 32459 MB
+# Available Virtual  : 13538 MB
+#-----------------------------------------------------------
+source fpga/vivado/build_basys3.tcl

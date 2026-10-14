@@ -11,6 +11,7 @@ try {
         -s tb_systolicforge_axi_lite -o $output `
         rtl\systolic_pe.sv `
         rtl\systolic_array.sv `
+        rtl\systolicforge_matmul_validator.sv `
         rtl\systolicforge_sdp_ram.sv `
         rtl\systolicforge_npu.sv `
         rtl\scratchpad_dma.sv `

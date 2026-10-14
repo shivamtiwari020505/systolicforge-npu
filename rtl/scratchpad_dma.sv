@@ -77,7 +77,7 @@ module scratchpad_dma #(
                                     ((external_end > external_limit) ||
                                      ((cmd_ext_addr % BYTES_PER_WORD) != 0));
 
-    assign cmd_ready = (state_q == DMA_IDLE) && local_ready;
+    assign cmd_ready = rst_n && (state_q == DMA_IDLE) && local_ready;
     assign busy = (state_q != DMA_IDLE);
 
     always @* begin
@@ -108,9 +108,14 @@ module scratchpad_dma #(
             end
             default: begin end
         endcase
+        if (!rst_n) begin
+            local_valid = 1'b0;
+            ext_req_valid = 1'b0;
+        end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    // RAM-facing address/control registers use synchronous reset.
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             state_q      <= DMA_IDLE;
             mem_q        <= '0;

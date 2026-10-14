@@ -24,23 +24,19 @@ module systolicforge_npu #(
     output logic [3:0] fault_code,
     output logic [$clog2(IMEM_DEPTH)-1:0] pc_debug
 );
-    localparam integer DEPTH = (1 << ADDR_W);
     localparam integer TILE_WORDS = ARRAY_ROWS * ARRAY_COLS;
     localparam integer TILE_INDEX_W = (TILE_WORDS > 1) ? $clog2(TILE_WORDS) : 1;
     localparam integer LANE_INDEX_W = (ARRAY_ROWS > 1) ? $clog2(ARRAY_ROWS) : 1;
     localparam logic [3:0] FAULT_ILLEGAL_OPCODE = 4'h1;
-    localparam logic [3:0] FAULT_ILLEGAL_DIMENSION = 4'h2;
-    localparam logic [3:0] FAULT_ADDRESS_RANGE = 4'h3;
     localparam logic [3:0] FAULT_PROGRAM_OVERRUN = 4'h4;
 
     typedef enum logic [3:0] {
-        ST_IDLE, ST_FETCH, ST_DECODE, ST_WEIGHT_REQ, ST_WEIGHT_WAIT,
+        ST_IDLE, ST_FETCH, ST_DECODE, ST_VALIDATE, ST_WEIGHT_REQ, ST_WEIGHT_WAIT,
         ST_LOAD_WEIGHTS, ST_ACT_WAIT, ST_ISSUE, ST_DRAIN
     } state_t;
     state_t state_q;
     logic [$clog2(IMEM_DEPTH)-1:0] pc_q;
     logic [7:0] m_size_q, k_size_q, n_size_q, issue_row_q;
-    logic [ADDR_W-1:0] a_base_q, b_base_q, c_base_q;
     logic [15:0] lda_q, ldb_q, ldc_q;
     logic accumulate_q;
     logic [7:0] weight_row_q, weight_col_q;
@@ -59,8 +55,9 @@ module systolicforge_npu #(
     wire [7:0] instruction_m = instruction[15:8];
     wire [7:0] instruction_k = instruction[23:16];
     wire [7:0] instruction_n = instruction[31:24];
-    logic [31:0] a_last_address, b_last_address, c_last_address;
-    logic instruction_address_invalid;
+    logic validation_valid;
+    logic [3:0] validation_fault;
+    logic [ADDR_W-1:0] a_row_address_q, b_row_address_q, c_row_address_q;
 
     // A read response remains available while selector/address are held,
     // including external DMA backpressure. A new address invalidates ready.
@@ -102,21 +99,18 @@ module systolicforge_npu #(
     assign weight_load = (state_q == ST_LOAD_WEIGHTS);
     assign array_input_valid = (state_q == ST_ISSUE);
 
+    systolicforge_matmul_validator #(.ARRAY_ROWS(ARRAY_ROWS),
+        .ARRAY_COLS(ARRAY_COLS), .ADDR_W(ADDR_W)) u_validator (
+        .clk(clk), .rst_n(rst_n),
+        .request((state_q == ST_DECODE) && (instruction[3:0] == 4'h1)),
+        .instruction(instruction), .pc_at_last(pc_q == IMEM_DEPTH - 1),
+        .valid(validation_valid), .fault_code(validation_fault)
+    );
+
     always @* begin
-        a_last_address = {16'd0, instruction[47:32]} +
-            ({24'd0, instruction_m} - 32'd1) * {16'd0, instruction[95:80]} +
-            ({24'd0, instruction_k} - 32'd1);
-        b_last_address = {16'd0, instruction[63:48]} +
-            ({24'd0, instruction_k} - 32'd1) * {16'd0, instruction[111:96]} +
-            ({24'd0, instruction_n} - 32'd1);
-        c_last_address = {16'd0, instruction[79:64]} +
-            ({24'd0, instruction_m} - 32'd1) * {16'd0, instruction[127:112]} +
-            ({24'd0, instruction_n} - 32'd1);
-        instruction_address_invalid = (a_last_address >= DEPTH) ||
-            (b_last_address >= DEPTH) || (c_last_address >= DEPTH);
-        a_address_full = 32'(a_base_q) + 32'(prefetch_row_q) * 32'(lda_q) +
+        a_address_full = 32'(a_row_address_q) +
                          32'(activation_index_q);
-        b_address_full = 32'(b_base_q) + 32'(weight_row_q) * 32'(ldb_q) +
+        b_address_full = 32'(b_row_address_q) +
                          32'(weight_col_q);
         a_read_addr = busy ? a_address_full[ADDR_W-1:0] : dma_addr;
         b_read_addr = busy ? b_address_full[ADDR_W-1:0] : dma_addr;
@@ -188,8 +182,7 @@ module systolicforge_npu #(
                 capture_valid = 1'b1;
                 capture_last = (capture_col == n_size_q - 1'b1);
                 capture_result = array_results[capture_col*ACC_W +: ACC_W];
-                capture_address_full = 32'(c_base_q) + 32'(issue_row_q) *
-                                       32'(ldc_q) + 32'(capture_col);
+                capture_address_full = 32'(c_row_address_q) + 32'(capture_col);
             end
         end
     end
@@ -210,7 +203,7 @@ module systolicforge_npu #(
                               32'(activation_response_index_q)] <= a_read_data;
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             host_read_valid_q <= 1'b0;
             host_read_mem_q <= '0;
@@ -224,7 +217,9 @@ module systolicforge_npu #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    // Synchronous control resets keep BRAM address/enable and DSP drivers
+    // stable between edges. Hold rst_n low across a rising edge to reset.
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             state_q <= ST_IDLE;
             pc_q <= '0;
@@ -232,9 +227,9 @@ module systolicforge_npu #(
             k_size_q <= '0;
             n_size_q <= '0;
             issue_row_q <= '0;
-            a_base_q <= '0;
-            b_base_q <= '0;
-            c_base_q <= '0;
+            a_row_address_q <= '0;
+            b_row_address_q <= '0;
+            c_row_address_q <= '0;
             lda_q <= '0;
             ldb_q <= '0;
             ldc_q <= '0;
@@ -282,6 +277,7 @@ module systolicforge_npu #(
                 activation_ready_q[activation_response_bank_q] <= 1'b1;
                 if (prefetch_row_q < m_size_q - 1'b1) begin
                     prefetch_row_q <= prefetch_row_q + 1'b1;
+                    a_row_address_q <= a_row_address_q + ADDR_W'(lda_q);
                     fill_bank_q <= !fill_bank_q;
                     activation_index_q <= '0;
                     activation_fetch_active_q <= 1'b1;
@@ -311,39 +307,26 @@ module systolicforge_npu #(
                             fault_code <= FAULT_PROGRAM_OVERRUN; state_q <= ST_IDLE;
                         end else begin pc_q <= pc_q + 1'b1; state_q <= ST_FETCH; end
                         4'h1: begin
-                            if ((instruction_m == 0) || (instruction_k == 0) ||
-                                (instruction_n == 0) || (instruction_k > ARRAY_ROWS) ||
-                                (instruction_n > ARRAY_COLS)) begin
-                                busy <= 1'b0; done <= 1'b1; fault <= 1'b1;
-                                fault_code <= FAULT_ILLEGAL_DIMENSION; state_q <= ST_IDLE;
-                            end else if (pc_q == IMEM_DEPTH - 1) begin
-                                busy <= 1'b0; done <= 1'b1; fault <= 1'b1;
-                                fault_code <= FAULT_PROGRAM_OVERRUN; state_q <= ST_IDLE;
-                            end else if (instruction_address_invalid) begin
-                                busy <= 1'b0; done <= 1'b1; fault <= 1'b1;
-                                fault_code <= FAULT_ADDRESS_RANGE; state_q <= ST_IDLE;
-                            end else begin
-                                m_size_q <= instruction_m;
-                                k_size_q <= instruction_k;
-                                n_size_q <= instruction_n;
-                                a_base_q <= ADDR_W'(instruction[47:32]);
-                                b_base_q <= ADDR_W'(instruction[63:48]);
-                                c_base_q <= ADDR_W'(instruction[79:64]);
-                                lda_q <= instruction[95:80];
-                                ldb_q <= instruction[111:96];
-                                ldc_q <= instruction[127:112];
-                                accumulate_q <= instruction[4];
-                                issue_row_q <= '0;
-                                weight_row_q <= '0;
-                                weight_col_q <= '0;
-                                activation_index_q <= '0;
-                                prefetch_row_q <= '0;
-                                fill_bank_q <= 1'b0;
-                                issue_bank_q <= 1'b0;
-                                activation_ready_q <= '0;
-                                activation_fetch_active_q <= 1'b1;
-                                state_q <= ST_WEIGHT_REQ;
-                            end
+                            m_size_q <= instruction_m;
+                            k_size_q <= instruction_k;
+                            n_size_q <= instruction_n;
+                            a_row_address_q <= ADDR_W'(instruction[47:32]);
+                            b_row_address_q <= ADDR_W'(instruction[63:48]);
+                            c_row_address_q <= ADDR_W'(instruction[79:64]);
+                            lda_q <= instruction[95:80];
+                            ldb_q <= instruction[111:96];
+                            ldc_q <= instruction[127:112];
+                            accumulate_q <= instruction[4];
+                            issue_row_q <= '0;
+                            weight_row_q <= '0;
+                            weight_col_q <= '0;
+                            activation_index_q <= '0;
+                            prefetch_row_q <= '0;
+                            fill_bank_q <= 1'b0;
+                            issue_bank_q <= 1'b0;
+                            activation_ready_q <= '0;
+                            activation_fetch_active_q <= 1'b0;
+                            state_q <= ST_VALIDATE;
                         end
                         4'hf: begin busy <= 1'b0; done <= 1'b1; state_q <= ST_IDLE; end
                         default: begin
@@ -352,13 +335,24 @@ module systolicforge_npu #(
                         end
                     endcase
                 end
+                ST_VALIDATE: if (validation_valid) begin
+                    if (validation_fault != 0) begin
+                        busy <= 1'b0; done <= 1'b1; fault <= 1'b1;
+                        fault_code <= validation_fault; state_q <= ST_IDLE;
+                    end else begin
+                        activation_fetch_active_q <= 1'b1;
+                        state_q <= ST_WEIGHT_REQ;
+                    end
+                end
                 ST_WEIGHT_REQ: begin
                     if (weight_col_q == n_size_q - 1'b1) begin
                         weight_col_q <= '0;
                         if (weight_row_q == k_size_q - 1'b1)
                             state_q <= ST_WEIGHT_WAIT;
-                        else
+                        else begin
                             weight_row_q <= weight_row_q + 1'b1;
+                            b_row_address_q <= b_row_address_q + ADDR_W'(ldb_q);
+                        end
                     end else
                         weight_col_q <= weight_col_q + 1'b1;
                 end
@@ -374,6 +368,7 @@ module systolicforge_npu #(
                         pc_q <= pc_q + 1'b1; state_q <= ST_FETCH;
                     end else begin
                         issue_row_q <= issue_row_q + 1'b1;
+                        c_row_address_q <= c_row_address_q + ADDR_W'(ldc_q);
                         issue_bank_q <= !issue_bank_q;
                         state_q <= ST_ACT_WAIT;
                     end

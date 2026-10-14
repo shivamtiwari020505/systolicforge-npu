@@ -18,3 +18,7 @@ Makefile text eol=lf
 *.dot  text eol=lf
 *.svg  text eol=lf
 *.ps1  text eol=crlf
+*.cmd  text eol=crlf
+
+# Preserve externally supplied evidence bytes, including original CRLF reports.
+docs/evidence/vivado/** -text

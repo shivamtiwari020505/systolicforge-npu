@@ -138,12 +138,13 @@ STATE_NAMES = {
     0: "IDLE",
     1: "FETCH",
     2: "DECODE",
-    3: "W_REQ",
-    4: "W_WAIT",
-    5: "LOAD_W",
-    6: "A_WAIT",
-    7: "ISSUE",
-    8: "DRAIN",
+    3: "VALIDATE",
+    4: "W_REQ",
+    5: "W_WAIT",
+    6: "LOAD_W",
+    7: "A_WAIT",
+    8: "ISSUE",
+    9: "DRAIN",
 }
 
 

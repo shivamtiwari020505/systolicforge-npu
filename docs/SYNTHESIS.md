@@ -150,6 +150,50 @@ address/bounds arithmetic. Yosys primitive-port resizing warnings are retained
 in the log; structural checks report zero problems.
 
 These are pre-place estimates for the entire general SoC, separate from the
-Basys3 UART demonstration. Vivado confirmation remains pending. The OOC flow
+Basys3 UART demonstration. The October 13 Vivado full-profile run confirmed
+eight BRAMs but failed estimated setup timing; see the closure record below.
+The OOC flow
 uses `-tclargs full`, includes the RAM primitive, and no longer changes the
 memory-dissolve limit.
+
+## October 13 Vivado baseline and locally verified closure correction
+
+The supplied full-profile Vivado 2025.2 reports contain 8 RAMB36E1, 75 DSP48E1,
+1480 packed slice LUTs and 1923 flip-flops. Post-synthesis WNS is -7.392 ns at
+100 MHz, with 198 failing endpoints. These results predate the closure change;
+they are neither routed results nor evidence of the corrected source's timing.
+
+After staged validation, incrementing row addresses and synchronous resets,
+Yosys 0.33 maps the full SoC to 8 RAMB36E1, 67 DSP48E1, 1824 LUT1-LUT6,
+1731 flip-flops (FDRE+FDSE), 12 RAM32M, 132 CARRY4, 90 MUXF7 and 20 MUXF8.
+The compact Basys3 UART top maps to 69 DSP48E1, 2143 LUT1-LUT6, 2189 flip-flops,
+22 RAM32M, 34 RAM64M, 98 CARRY4, 482 MUXF7 and 124 MUXF8. Structural checks
+pass for both and the exact eight-BRAM full-capacity assertion is retained.
+No asynchronous-reset flip-flop primitives remain in these two mapped designs.
+
+These new counts are Yosys pre-place estimates, not Vivado packed utilization
+or timing. The two tools' LUT metrics must not be compared as equivalent area.
+See [FPGA_CLOSURE.md](FPGA_CLOSURE.md) and [the rerun guide](../FPGA_RERUN.md).
+
+## October 14 Vivado 2025.2 implementation evidence
+
+Complete user-returned build archives, manifests, logs, journals and reports
+are preserved in [the evidence record](evidence/vivado/2026-10-14/README.md).
+
+| Metric | Full-NPU OOC synthesis | Compact Basys3 routed |
+|---|---:|---:|
+| Scratchpad / instruction words | 4096 / 256 | 128 / 16 |
+| Slice LUTs | 1536 | 1389 |
+| Flip-flops | 1411 | 1795 |
+| DSP48E1 | 67 | 67 |
+| Block RAM tiles | 8 | 0 (distributed RAM) |
+| Setup WNS at 100 MHz | +2.098 ns (estimated) | +0.036 ns (routed) |
+| Hold WHS | Not reported by max-only summary | +0.067 ns |
+| Setup TNS / failing endpoints | 0 / 0 | 0 / 0 |
+| Routing errors | Not applicable | 0 |
+| Bitstream | Not an OOC output | Generated |
+
+Basys3 hold/pulse-width checks also have zero failing endpoints. Setup margin
+is only 36 ps. Vectorless estimated on-chip power is 0.106 W (medium confidence,
+no activity file), not board power. DRC warnings and unknown source revision
+are documented in the evidence record. Physical board validation is pending.

@@ -27,12 +27,17 @@ switch -- $profile {
     default { error "Unknown OOC profile '$profile'; use compact or full" }
 }
 set scratchpad_words [expr {1 << $addr_w}]
-set build_dir [file join $repo_root build vivado_npu_ooc_$profile]
+set run_root [file join $repo_root build]
+if {[info exists ::env(SYSTOLICFORGE_RUN_ROOT)]} {
+    set run_root [file normalize $::env(SYSTOLICFORGE_RUN_ROOT)]
+}
+set build_dir [file join $run_root vivado_npu_ooc_$profile]
 file mkdir $build_dir
 
 set rtl_files [list \
     [file join $repo_root rtl systolic_pe.sv] \
     [file join $repo_root rtl systolic_array.sv] \
+    [file join $repo_root rtl systolicforge_matmul_validator.sv] \
     [file join $repo_root rtl systolicforge_sdp_ram.sv] \
     [file join $repo_root rtl systolicforge_npu.sv] \
     [file join $repo_root rtl scratchpad_dma.sv] \
@@ -78,6 +83,9 @@ puts $manifest "instruction_words=$imem_depth"
 puts $manifest "execution_engine=scheduled_synchronous_sdp"
 puts $manifest "operand_prefetch=pipelined_active_lanes"
 puts $manifest "activation_row_buffers=2"
+puts $manifest "instruction_validation=registered_8x16_product_25bit_range_check"
+puts $manifest "row_addressing=incrementing_pointers"
+puts $manifest "control_reset=synchronous_active_low"
 puts $manifest "memory_mapping=inferred_block_ram"
 puts $manifest "dissolve_memory_size_limit_bits=$dissolve_memory_size_limit_bits"
 puts $manifest "fit_or_route_claim=none"
@@ -127,11 +135,22 @@ set bram_count [llength $bram_cells]
 if {$bram_count == 0} {
     error "No block RAM inferred for scheduled NPU storage; inspect synthesis warnings"
 }
+if {$profile eq "full" && $bram_count != 8} {
+    error "Full-capacity storage expected 8 block RAM primitives, found $bram_count"
+}
+set worst_path [lindex [get_timing_paths -delay_type max -max_paths 1 -nworst 1] 0]
+if {$worst_path eq ""} { error "No constrained setup path found after synthesis" }
+set synth_wns [get_property SLACK $worst_path]
 
 set manifest [open $manifest_path a]
 puts $manifest "inferred_bram_primitives=$bram_count"
+puts $manifest "synth_wns_ns=$synth_wns"
+puts $manifest "synth_setup_target_met=[expr {$synth_wns >= 0.0}]"
 puts $manifest "completed_utc=[clock format [clock seconds] -gmt true -format {%Y-%m-%dT%H:%M:%SZ}]"
 close $manifest
 
 puts "INFO: Whole-NPU $profile synthesis completed successfully"
+if {$synth_wns < 0.0} {
+    puts "WARNING: Post-synthesis 100 MHz setup estimate fails: WNS=$synth_wns ns. This is not timing closure."
+}
 puts "INFO: Reports and checkpoint: $build_dir"

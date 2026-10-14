@@ -15,7 +15,7 @@ depend on that flow completing.
 
 The scratchpads use asynchronous reads with reset-free synchronous write
 processes so Vivado can infer distributed RAM. Only control state is reset.
-Keeping memory writes out of the asynchronously reset control process is an
+Keeping memory writes reset-free and separate from control state is an
 intentional implementation requirement; otherwise the C scratchpad becomes a
 large register bank with a timing-critical write mux.
 
@@ -47,6 +47,13 @@ bitstream evidence; archive the generated reports before making those claims.
 
 ## UART operation
 
+The October 14 Vivado 2025.2 run generated a bitstream and meets the 100 MHz
+routed setup/hold constraints: WNS +0.036 ns, WHS +0.067 ns, zero failing
+endpoints and routing errors. Routed utilization is 1389 LUTs, 1795 flip-flops
+and 67 DSPs; compact scratchpads use distributed RAM, not BRAM. Setup margin
+is narrow. See [the complete evidence](evidence/vivado/2026-10-14/README.md).
+Physical board self-test/UART validation remains pending.
+
 The Basys3 USB-UART bridge is connected at 115200 8N1. The binary protocol can
 write 128-bit instructions, write or read A/B/C words, start compute, and read
 status/fault information. The supplied host program compiles and checks a JSON
@@ -64,7 +71,7 @@ limits, status bits, and request arbitration rules.
 
 ## Button and LED behavior
 
-- BTNU: asynchronous reset.
+- BTNU: reset request synchronized through two clocked stages.
 - BTNC: request or rerun the built-in engine self-test.
 - LED0: latest button self-test passed.
 - LED1: latest button self-test failed, or the engine reports a fault.

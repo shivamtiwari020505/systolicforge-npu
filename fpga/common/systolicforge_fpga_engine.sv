@@ -51,17 +51,17 @@ module systolicforge_fpga_engine #(
 
     localparam logic [3:0] FAULT_NONE              = 4'h0;
     localparam logic [3:0] FAULT_ILLEGAL_OPCODE    = 4'h1;
-    localparam logic [3:0] FAULT_ILLEGAL_DIMENSION = 4'h2;
-    localparam logic [3:0] FAULT_ADDRESS_RANGE     = 4'h3;
     localparam logic [3:0] FAULT_PROGRAM_OVERRUN   = 4'h4;
 
     localparam logic [1:0] MEM_A = 2'd0;
     localparam logic [1:0] MEM_B = 2'd1;
     localparam logic [1:0] MEM_C = 2'd2;
 
-    typedef enum logic [2:0] {
+    typedef enum logic [3:0] {
         ST_IDLE,
         ST_FETCH,
+        ST_DECODE,
+        ST_VALIDATE,
         ST_PREFETCH_WEIGHTS,
         ST_LOAD_WEIGHTS,
         ST_PREFETCH_ACTIVATIONS,
@@ -90,9 +90,6 @@ module systolicforge_fpga_engine #(
     logic [7:0] m_size_q;
     logic [7:0] k_size_q;
     logic [7:0] n_size_q;
-    logic [ADDR_W-1:0] a_base_q;
-    logic [ADDR_W-1:0] b_base_q;
-    logic [ADDR_W-1:0] c_base_q;
     logic [ADDR_W-1:0] lda_q;
     logic [ADDR_W-1:0] ldb_q;
     logic [ADDR_W-1:0] ldc_q;
@@ -102,21 +99,16 @@ module systolicforge_fpga_engine #(
     logic [TILE_INDEX_W-1:0] weight_index_q;
     logic [ROW_INDEX_W-1:0] activation_index_q;
 
-    wire [INSTR_W-1:0] instruction = instruction_mem[pc_q];
+    logic [INSTR_W-1:0] instruction;
     wire [7:0] instruction_m = instruction[15:8];
     wire [7:0] instruction_k = instruction[23:16];
     wire [7:0] instruction_n = instruction[31:24];
-    wire [15:0] instruction_a_base = instruction[47:32];
-    wire [15:0] instruction_b_base = instruction[63:48];
     wire [15:0] instruction_c_base = instruction[79:64];
-    wire [15:0] instruction_lda = instruction[95:80];
-    wire [15:0] instruction_ldb = instruction[111:96];
-    wire [15:0] instruction_ldc = instruction[127:112];
 
-    logic [31:0] a_last_address;
-    logic [31:0] b_last_address;
-    logic [31:0] c_last_address;
-    logic instruction_address_invalid;
+    logic validation_valid;
+    logic [3:0] validation_fault;
+    logic [ADDR_W-1:0] a_row_address_q, b_row_address_q;
+    logic [ADDR_W-1:0] c_row_address_q [0:ARRAY_COLS-1];
     logic pc_at_last_word;
 
     logic [ADDR_W-1:0] a_read_addr;
@@ -151,38 +143,25 @@ module systolicforge_fpga_engine #(
     integer sequential_idx;
 
     assign pc_debug = pc_q;
-    assign dma_ready = !busy;
+    assign dma_ready = rst_n && !busy;
     assign weight_load = (state_q == ST_LOAD_WEIGHTS);
     assign array_input_valid = (state_q == ST_ISSUE);
 
-    always @* begin
-        a_last_address = {16'd0, instruction_a_base} +
-                         ({24'd0, instruction_m} - 32'd1) *
-                         {16'd0, instruction_lda} +
-                         ({24'd0, instruction_k} - 32'd1);
-        b_last_address = {16'd0, instruction_b_base} +
-                         ({24'd0, instruction_k} - 32'd1) *
-                         {16'd0, instruction_ldb} +
-                         ({24'd0, instruction_n} - 32'd1);
-        c_last_address = {16'd0, instruction_c_base} +
-                         ({24'd0, instruction_m} - 32'd1) *
-                         {16'd0, instruction_ldc} +
-                         ({24'd0, instruction_n} - 32'd1);
-        instruction_address_invalid = (a_last_address >= DEPTH) ||
-                                      (b_last_address >= DEPTH) ||
-                                      (c_last_address >= DEPTH);
-        pc_at_last_word = (pc_q == IMEM_DEPTH - 1);
-    end
+    assign pc_at_last_word = (pc_q == IMEM_DEPTH - 1);
+    systolicforge_matmul_validator #(.ARRAY_ROWS(ARRAY_ROWS),
+        .ARRAY_COLS(ARRAY_COLS), .ADDR_W(ADDR_W)) u_validator (
+        .clk(clk), .rst_n(rst_n),
+        .request((state_q == ST_DECODE) && (instruction[3:0] == OP_MATMUL)),
+        .instruction(instruction), .pc_at_last(pc_at_last_word),
+        .valid(validation_valid), .fault_code(validation_fault)
+    );
 
     // Compute and host accesses are mutually exclusive, so each scratchpad has
     // one selected read address. This is important for LUTRAM inference.
     always @* begin
-        a_internal_address = {{(32-ADDR_W){1'b0}}, a_base_q} +
-                             issue_row_q * {{(32-ADDR_W){1'b0}}, lda_q} +
+        a_internal_address = {{(32-ADDR_W){1'b0}}, a_row_address_q} +
                              activation_index_q;
-        b_internal_address = {{(32-ADDR_W){1'b0}}, b_base_q} +
-                             (weight_index_q / ARRAY_COLS) *
-                             {{(32-ADDR_W){1'b0}}, ldb_q} +
+        b_internal_address = {{(32-ADDR_W){1'b0}}, b_row_address_q} +
                              (weight_index_q % ARRAY_COLS);
 
         a_read_addr = dma_addr;
@@ -225,7 +204,7 @@ module systolicforge_fpga_engine #(
             c_write_enable = 1'b1;
             c_write_addr = dma_addr;
             c_write_data = dma_wdata;
-        end else if (capture_valid) begin
+        end else if (rst_n && capture_valid) begin
             c_write_enable = 1'b1;
             c_write_addr = capture_address;
             if (accumulate_q)
@@ -260,10 +239,7 @@ module systolicforge_fpga_engine #(
                 (capture_scan < n_size_q)) begin
                 capture_valid = 1'b1;
                 capture_column = capture_scan[COLUMN_INDEX_W-1:0];
-                capture_address_full = {{(32-ADDR_W){1'b0}}, c_base_q} +
-                                       capture_row_q[capture_scan] *
-                                       {{(32-ADDR_W){1'b0}}, ldc_q} +
-                                       capture_scan;
+                capture_address_full = 32'(c_row_address_q[capture_scan]);
                 capture_result = $signed(
                     array_results[(capture_scan*ACC_W) +: ACC_W]
                 );
@@ -295,8 +271,11 @@ module systolicforge_fpga_engine #(
     // Every location is initialized by the host or prefetch state before use.
     // This coding style is required for FPGA RAM inference.
     always_ff @(posedge clk) begin
-        if (program_we)
+        if (rst_n && program_we && !busy)
             instruction_mem[program_addr] <= program_wdata;
+
+        if (rst_n && (state_q == ST_FETCH))
+            instruction <= instruction_mem[pc_q];
 
         if (dma_valid && dma_ready && dma_write) begin
             case (dma_mem)
@@ -325,16 +304,15 @@ module systolicforge_fpga_engine #(
         end
     end
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             state_q <= ST_IDLE;
             pc_q <= '0;
             m_size_q <= '0;
             k_size_q <= '0;
             n_size_q <= '0;
-            a_base_q <= '0;
-            b_base_q <= '0;
-            c_base_q <= '0;
+            a_row_address_q <= '0;
+            b_row_address_q <= '0;
             lda_q <= '0;
             ldb_q <= '0;
             ldc_q <= '0;
@@ -348,13 +326,19 @@ module systolicforge_fpga_engine #(
             fault_code <= FAULT_NONE;
             for (sequential_idx = 0; sequential_idx < ARRAY_COLS;
                  sequential_idx = sequential_idx + 1)
-                capture_row_q[sequential_idx] <= '0;
+                begin
+                    capture_row_q[sequential_idx] <= '0;
+                    c_row_address_q[sequential_idx] <= '0;
+                end
         end else begin
             done <= 1'b0;
 
-            if (capture_valid)
+            if (capture_valid) begin
                 capture_row_q[capture_column] <=
                     capture_row_q[capture_column] + 1'b1;
+                c_row_address_q[capture_column] <=
+                    c_row_address_q[capture_column] + ldc_q;
+            end
 
             case (state_q)
                 ST_IDLE: begin
@@ -367,7 +351,9 @@ module systolicforge_fpga_engine #(
                     end
                 end
 
-                ST_FETCH: begin
+                ST_FETCH: state_q <= ST_DECODE;
+
+                ST_DECODE: begin
                     case (instruction[3:0])
                         OP_NOP: begin
                             if (pc_at_last_word) begin
@@ -378,50 +364,30 @@ module systolicforge_fpga_engine #(
                                 state_q <= ST_IDLE;
                             end else begin
                                 pc_q <= pc_q + 1'b1;
+                                state_q <= ST_FETCH;
                             end
                         end
 
                         OP_MATMUL: begin
-                            if ((instruction_m == 0) ||
-                                (instruction_k == 0) ||
-                                (instruction_n == 0) ||
-                                (instruction_k > ARRAY_ROWS) ||
-                                (instruction_n > ARRAY_COLS)) begin
-                                busy <= 1'b0;
-                                done <= 1'b1;
-                                fault <= 1'b1;
-                                fault_code <= FAULT_ILLEGAL_DIMENSION;
-                                state_q <= ST_IDLE;
-                            end else if (pc_at_last_word) begin
-                                busy <= 1'b0;
-                                done <= 1'b1;
-                                fault <= 1'b1;
-                                fault_code <= FAULT_PROGRAM_OVERRUN;
-                                state_q <= ST_IDLE;
-                            end else if (instruction_address_invalid) begin
-                                busy <= 1'b0;
-                                done <= 1'b1;
-                                fault <= 1'b1;
-                                fault_code <= FAULT_ADDRESS_RANGE;
-                                state_q <= ST_IDLE;
-                            end else begin
-                                accumulate_q <= instruction[4];
-                                m_size_q <= instruction_m;
-                                k_size_q <= instruction_k;
-                                n_size_q <= instruction_n;
-                                a_base_q <= instruction[32 +: ADDR_W];
-                                b_base_q <= instruction[48 +: ADDR_W];
-                                c_base_q <= instruction[64 +: ADDR_W];
-                                lda_q <= instruction[80 +: ADDR_W];
-                                ldb_q <= instruction[96 +: ADDR_W];
-                                ldc_q <= instruction[112 +: ADDR_W];
-                                issue_row_q <= '0;
-                                weight_index_q <= '0;
-                                for (sequential_idx = 0; sequential_idx < ARRAY_COLS;
-                                     sequential_idx = sequential_idx + 1)
+                            accumulate_q <= instruction[4];
+                            m_size_q <= instruction_m;
+                            k_size_q <= instruction_k;
+                            n_size_q <= instruction_n;
+                            a_row_address_q <= instruction[32 +: ADDR_W];
+                            b_row_address_q <= instruction[48 +: ADDR_W];
+                            lda_q <= instruction[80 +: ADDR_W];
+                            ldb_q <= instruction[96 +: ADDR_W];
+                            ldc_q <= instruction[112 +: ADDR_W];
+                            issue_row_q <= '0;
+                            weight_index_q <= '0;
+                            for (sequential_idx = 0; sequential_idx < ARRAY_COLS;
+                                 sequential_idx = sequential_idx + 1)
+                                begin
                                     capture_row_q[sequential_idx] <= '0;
-                                state_q <= ST_PREFETCH_WEIGHTS;
-                            end
+                                    c_row_address_q[sequential_idx] <=
+                                        ADDR_W'(instruction_c_base) + ADDR_W'(sequential_idx);
+                                    end
+                                state_q <= ST_VALIDATE;
                         end
 
                         OP_HALT: begin
@@ -440,7 +406,18 @@ module systolicforge_fpga_engine #(
                     endcase
                 end
 
+                ST_VALIDATE: if (validation_valid) begin
+                    if (validation_fault != 0) begin
+                        busy <= 1'b0; done <= 1'b1; fault <= 1'b1;
+                        fault_code <= validation_fault; state_q <= ST_IDLE;
+                    end else begin
+                        state_q <= ST_PREFETCH_WEIGHTS;
+                    end
+                end
+
                 ST_PREFETCH_WEIGHTS: begin
+                    if ((weight_index_q % ARRAY_COLS) == ARRAY_COLS - 1)
+                        b_row_address_q <= b_row_address_q + ldb_q;
                     if (weight_index_q == TILE_WORDS - 1) begin
                         weight_index_q <= '0;
                         state_q <= ST_LOAD_WEIGHTS;
@@ -468,6 +445,7 @@ module systolicforge_fpga_engine #(
                         state_q <= ST_DRAIN;
                     end else begin
                         issue_row_q <= issue_row_q + 1'b1;
+                        a_row_address_q <= a_row_address_q + lda_q;
                         activation_index_q <= '0;
                         state_q <= ST_PREFETCH_ACTIVATIONS;
                     end

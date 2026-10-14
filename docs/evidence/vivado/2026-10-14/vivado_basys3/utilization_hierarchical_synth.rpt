@@ -1,0 +1,38 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Wed Oct 14 00:14:59 2026
+| Host         : LAPTOP-FNG4RD0K running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file C:/shivami/systolicforge-fpga-closure-v5-launcher-fix/build/vivado_basys3/utilization_hierarchical_synth.rpt
+| Design       : systolicforge_fpga_uart_demo
+| Device       : xc7a35tcpg236-1
+| Speed File   : -1
+| Design State : Synthesized
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++--------------------------------------+--------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+|               Instance               |             Module             | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
++--------------------------------------+--------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+| systolicforge_fpga_uart_demo         |                          (top) |       1481 |       1245 |     220 |   16 | 1755 |      0 |      0 |         67 |
+|   (systolicforge_fpga_uart_demo)     |                          (top) |         10 |         10 |       0 |    0 |  229 |      0 |      0 |          0 |
+|   u_engine                           |      systolicforge_fpga_engine |       1343 |       1107 |     220 |   16 | 1475 |      0 |      0 |         67 |
+|     (u_engine)                       |      systolicforge_fpga_engine |        713 |        493 |     220 |    0 |  885 |      0 |      0 |          0 |
+|     u_array                          |                 systolic_array |        517 |        501 |       0 |   16 |  523 |      0 |      0 |         64 |
+|       (u_array)                      |                 systolic_array |         24 |          8 |       0 |   16 |  188 |      0 |      0 |          0 |
+|       g_pe_rows[0].g_pe_cols[7].u_pe |                  systolic_pe_6 |        136 |        136 |       0 |    0 |    1 |      0 |      0 |          1 |
+|       g_pe_rows[7].g_pe_cols[5].u_pe | systolic_pe__parameterized0_59 |        330 |        330 |       0 |    0 |    1 |      0 |      0 |          1 |
+|     u_validator                      | systolicforge_matmul_validator |        113 |        113 |       0 |    0 |   67 |      0 |      0 |          3 |
+|   u_uart_rx                          |          systolicforge_uart_rx |         72 |         72 |       0 |    0 |   27 |      0 |      0 |          0 |
+|   u_uart_tx                          |          systolicforge_uart_tx |         56 |         56 |       0 |    0 |   24 |      0 |      0 |          0 |
++--------------------------------------+--------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+
+

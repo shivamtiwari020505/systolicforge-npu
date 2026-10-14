@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="3734" height="702" viewBox="0 0 3734 702" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="4070" height="702" viewBox="0 0 4070 702" role="img" aria-labelledby="title desc">
 <title id="title">Measured mini-NPU instruction timing</title>
-<desc id="desc">4×4 RTL test: two M=3, N=3 MATMUL tiles (K=4 then K=2 accumulate), followed by HALT Generated from canonical trace SHA-256 d166486624308ff8af3e543b4f86314de214a521fbb789cb25a59ff03beb688c.</desc>
+<desc id="desc">4×4 RTL test: two M=3, N=3 MATMUL tiles (K=4 then K=2 accumulate), followed by HALT Generated from canonical trace SHA-256 1adeaafba45a24034d96da126bc266076703e37039ba941cdd3c5f53805972aa.</desc>
 <style>
   .title { font: 700 21px Arial, sans-serif; fill: #0f172a; }
   .subtitle { font: 12px Arial, sans-serif; fill: #475569; }
@@ -10,7 +10,7 @@
   .bus { font: 600 10px Consolas, monospace; fill: #0f172a; }
   .foot { font: 10px Consolas, monospace; fill: #64748b; }
 </style>
-<rect width="3734" height="702" fill="#ffffff"/>
+<rect width="4070" height="702" fill="#ffffff"/>
 <text x="20.0" y="32.0" class="title" text-anchor="start">Measured mini-NPU instruction timing</text>
 <text x="20.0" y="53.0" class="subtitle" text-anchor="start">4×4 RTL test: two M=3, N=3 MATMUL tiles (K=4 then K=2 accumulate), followed by HALT</text>
 <line x1="178" y1="86" x2="178" y2="632" stroke="#e2e8f0" stroke-width="1"/>
@@ -182,170 +182,190 @@
 <line x1="3664" y1="86" x2="3664" y2="632" stroke="#e2e8f0" stroke-width="1"/>
 <text x="3685.0" y="79.0" class="cycle" text-anchor="middle">C83</text>
 <line x1="3706" y1="86" x2="3706" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3727.0" y="79.0" class="cycle" text-anchor="middle">C84</text>
+<line x1="3748" y1="86" x2="3748" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3769.0" y="79.0" class="cycle" text-anchor="middle">C85</text>
+<line x1="3790" y1="86" x2="3790" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3811.0" y="79.0" class="cycle" text-anchor="middle">C86</text>
+<line x1="3832" y1="86" x2="3832" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3853.0" y="79.0" class="cycle" text-anchor="middle">C87</text>
+<line x1="3874" y1="86" x2="3874" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3895.0" y="79.0" class="cycle" text-anchor="middle">C88</text>
+<line x1="3916" y1="86" x2="3916" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3937.0" y="79.0" class="cycle" text-anchor="middle">C89</text>
+<line x1="3958" y1="86" x2="3958" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="3979.0" y="79.0" class="cycle" text-anchor="middle">C90</text>
+<line x1="4000" y1="86" x2="4000" y2="632" stroke="#e2e8f0" stroke-width="1"/>
+<text x="4021.0" y="79.0" class="cycle" text-anchor="middle">C91</text>
+<line x1="4042" y1="86" x2="4042" y2="632" stroke="#e2e8f0" stroke-width="1"/>
 <text x="18.0" y="133.0" class="label" text-anchor="start">clk</text>
-<path d="M 178 139 H 199.0 V 114 H 220 V 139 M 220 139 H 241.0 V 114 H 262 V 139 M 262 139 H 283.0 V 114 H 304 V 139 M 304 139 H 325.0 V 114 H 346 V 139 M 346 139 H 367.0 V 114 H 388 V 139 M 388 139 H 409.0 V 114 H 430 V 139 M 430 139 H 451.0 V 114 H 472 V 139 M 472 139 H 493.0 V 114 H 514 V 139 M 514 139 H 535.0 V 114 H 556 V 139 M 556 139 H 577.0 V 114 H 598 V 139 M 598 139 H 619.0 V 114 H 640 V 139 M 640 139 H 661.0 V 114 H 682 V 139 M 682 139 H 703.0 V 114 H 724 V 139 M 724 139 H 745.0 V 114 H 766 V 139 M 766 139 H 787.0 V 114 H 808 V 139 M 808 139 H 829.0 V 114 H 850 V 139 M 850 139 H 871.0 V 114 H 892 V 139 M 892 139 H 913.0 V 114 H 934 V 139 M 934 139 H 955.0 V 114 H 976 V 139 M 976 139 H 997.0 V 114 H 1018 V 139 M 1018 139 H 1039.0 V 114 H 1060 V 139 M 1060 139 H 1081.0 V 114 H 1102 V 139 M 1102 139 H 1123.0 V 114 H 1144 V 139 M 1144 139 H 1165.0 V 114 H 1186 V 139 M 1186 139 H 1207.0 V 114 H 1228 V 139 M 1228 139 H 1249.0 V 114 H 1270 V 139 M 1270 139 H 1291.0 V 114 H 1312 V 139 M 1312 139 H 1333.0 V 114 H 1354 V 139 M 1354 139 H 1375.0 V 114 H 1396 V 139 M 1396 139 H 1417.0 V 114 H 1438 V 139 M 1438 139 H 1459.0 V 114 H 1480 V 139 M 1480 139 H 1501.0 V 114 H 1522 V 139 M 1522 139 H 1543.0 V 114 H 1564 V 139 M 1564 139 H 1585.0 V 114 H 1606 V 139 M 1606 139 H 1627.0 V 114 H 1648 V 139 M 1648 139 H 1669.0 V 114 H 1690 V 139 M 1690 139 H 1711.0 V 114 H 1732 V 139 M 1732 139 H 1753.0 V 114 H 1774 V 139 M 1774 139 H 1795.0 V 114 H 1816 V 139 M 1816 139 H 1837.0 V 114 H 1858 V 139 M 1858 139 H 1879.0 V 114 H 1900 V 139 M 1900 139 H 1921.0 V 114 H 1942 V 139 M 1942 139 H 1963.0 V 114 H 1984 V 139 M 1984 139 H 2005.0 V 114 H 2026 V 139 M 2026 139 H 2047.0 V 114 H 2068 V 139 M 2068 139 H 2089.0 V 114 H 2110 V 139 M 2110 139 H 2131.0 V 114 H 2152 V 139 M 2152 139 H 2173.0 V 114 H 2194 V 139 M 2194 139 H 2215.0 V 114 H 2236 V 139 M 2236 139 H 2257.0 V 114 H 2278 V 139 M 2278 139 H 2299.0 V 114 H 2320 V 139 M 2320 139 H 2341.0 V 114 H 2362 V 139 M 2362 139 H 2383.0 V 114 H 2404 V 139 M 2404 139 H 2425.0 V 114 H 2446 V 139 M 2446 139 H 2467.0 V 114 H 2488 V 139 M 2488 139 H 2509.0 V 114 H 2530 V 139 M 2530 139 H 2551.0 V 114 H 2572 V 139 M 2572 139 H 2593.0 V 114 H 2614 V 139 M 2614 139 H 2635.0 V 114 H 2656 V 139 M 2656 139 H 2677.0 V 114 H 2698 V 139 M 2698 139 H 2719.0 V 114 H 2740 V 139 M 2740 139 H 2761.0 V 114 H 2782 V 139 M 2782 139 H 2803.0 V 114 H 2824 V 139 M 2824 139 H 2845.0 V 114 H 2866 V 139 M 2866 139 H 2887.0 V 114 H 2908 V 139 M 2908 139 H 2929.0 V 114 H 2950 V 139 M 2950 139 H 2971.0 V 114 H 2992 V 139 M 2992 139 H 3013.0 V 114 H 3034 V 139 M 3034 139 H 3055.0 V 114 H 3076 V 139 M 3076 139 H 3097.0 V 114 H 3118 V 139 M 3118 139 H 3139.0 V 114 H 3160 V 139 M 3160 139 H 3181.0 V 114 H 3202 V 139 M 3202 139 H 3223.0 V 114 H 3244 V 139 M 3244 139 H 3265.0 V 114 H 3286 V 139 M 3286 139 H 3307.0 V 114 H 3328 V 139 M 3328 139 H 3349.0 V 114 H 3370 V 139 M 3370 139 H 3391.0 V 114 H 3412 V 139 M 3412 139 H 3433.0 V 114 H 3454 V 139 M 3454 139 H 3475.0 V 114 H 3496 V 139 M 3496 139 H 3517.0 V 114 H 3538 V 139 M 3538 139 H 3559.0 V 114 H 3580 V 139 M 3580 139 H 3601.0 V 114 H 3622 V 139 M 3622 139 H 3643.0 V 114 H 3664 V 139 M 3664 139 H 3685.0 V 114 H 3706 V 139" fill="none" stroke="#334155" stroke-width="2"/>
-<rect x="8" y="152" width="3718" height="48" fill="#f8fafc"/>
+<path d="M 178 139 H 199.0 V 114 H 220 V 139 M 220 139 H 241.0 V 114 H 262 V 139 M 262 139 H 283.0 V 114 H 304 V 139 M 304 139 H 325.0 V 114 H 346 V 139 M 346 139 H 367.0 V 114 H 388 V 139 M 388 139 H 409.0 V 114 H 430 V 139 M 430 139 H 451.0 V 114 H 472 V 139 M 472 139 H 493.0 V 114 H 514 V 139 M 514 139 H 535.0 V 114 H 556 V 139 M 556 139 H 577.0 V 114 H 598 V 139 M 598 139 H 619.0 V 114 H 640 V 139 M 640 139 H 661.0 V 114 H 682 V 139 M 682 139 H 703.0 V 114 H 724 V 139 M 724 139 H 745.0 V 114 H 766 V 139 M 766 139 H 787.0 V 114 H 808 V 139 M 808 139 H 829.0 V 114 H 850 V 139 M 850 139 H 871.0 V 114 H 892 V 139 M 892 139 H 913.0 V 114 H 934 V 139 M 934 139 H 955.0 V 114 H 976 V 139 M 976 139 H 997.0 V 114 H 1018 V 139 M 1018 139 H 1039.0 V 114 H 1060 V 139 M 1060 139 H 1081.0 V 114 H 1102 V 139 M 1102 139 H 1123.0 V 114 H 1144 V 139 M 1144 139 H 1165.0 V 114 H 1186 V 139 M 1186 139 H 1207.0 V 114 H 1228 V 139 M 1228 139 H 1249.0 V 114 H 1270 V 139 M 1270 139 H 1291.0 V 114 H 1312 V 139 M 1312 139 H 1333.0 V 114 H 1354 V 139 M 1354 139 H 1375.0 V 114 H 1396 V 139 M 1396 139 H 1417.0 V 114 H 1438 V 139 M 1438 139 H 1459.0 V 114 H 1480 V 139 M 1480 139 H 1501.0 V 114 H 1522 V 139 M 1522 139 H 1543.0 V 114 H 1564 V 139 M 1564 139 H 1585.0 V 114 H 1606 V 139 M 1606 139 H 1627.0 V 114 H 1648 V 139 M 1648 139 H 1669.0 V 114 H 1690 V 139 M 1690 139 H 1711.0 V 114 H 1732 V 139 M 1732 139 H 1753.0 V 114 H 1774 V 139 M 1774 139 H 1795.0 V 114 H 1816 V 139 M 1816 139 H 1837.0 V 114 H 1858 V 139 M 1858 139 H 1879.0 V 114 H 1900 V 139 M 1900 139 H 1921.0 V 114 H 1942 V 139 M 1942 139 H 1963.0 V 114 H 1984 V 139 M 1984 139 H 2005.0 V 114 H 2026 V 139 M 2026 139 H 2047.0 V 114 H 2068 V 139 M 2068 139 H 2089.0 V 114 H 2110 V 139 M 2110 139 H 2131.0 V 114 H 2152 V 139 M 2152 139 H 2173.0 V 114 H 2194 V 139 M 2194 139 H 2215.0 V 114 H 2236 V 139 M 2236 139 H 2257.0 V 114 H 2278 V 139 M 2278 139 H 2299.0 V 114 H 2320 V 139 M 2320 139 H 2341.0 V 114 H 2362 V 139 M 2362 139 H 2383.0 V 114 H 2404 V 139 M 2404 139 H 2425.0 V 114 H 2446 V 139 M 2446 139 H 2467.0 V 114 H 2488 V 139 M 2488 139 H 2509.0 V 114 H 2530 V 139 M 2530 139 H 2551.0 V 114 H 2572 V 139 M 2572 139 H 2593.0 V 114 H 2614 V 139 M 2614 139 H 2635.0 V 114 H 2656 V 139 M 2656 139 H 2677.0 V 114 H 2698 V 139 M 2698 139 H 2719.0 V 114 H 2740 V 139 M 2740 139 H 2761.0 V 114 H 2782 V 139 M 2782 139 H 2803.0 V 114 H 2824 V 139 M 2824 139 H 2845.0 V 114 H 2866 V 139 M 2866 139 H 2887.0 V 114 H 2908 V 139 M 2908 139 H 2929.0 V 114 H 2950 V 139 M 2950 139 H 2971.0 V 114 H 2992 V 139 M 2992 139 H 3013.0 V 114 H 3034 V 139 M 3034 139 H 3055.0 V 114 H 3076 V 139 M 3076 139 H 3097.0 V 114 H 3118 V 139 M 3118 139 H 3139.0 V 114 H 3160 V 139 M 3160 139 H 3181.0 V 114 H 3202 V 139 M 3202 139 H 3223.0 V 114 H 3244 V 139 M 3244 139 H 3265.0 V 114 H 3286 V 139 M 3286 139 H 3307.0 V 114 H 3328 V 139 M 3328 139 H 3349.0 V 114 H 3370 V 139 M 3370 139 H 3391.0 V 114 H 3412 V 139 M 3412 139 H 3433.0 V 114 H 3454 V 139 M 3454 139 H 3475.0 V 114 H 3496 V 139 M 3496 139 H 3517.0 V 114 H 3538 V 139 M 3538 139 H 3559.0 V 114 H 3580 V 139 M 3580 139 H 3601.0 V 114 H 3622 V 139 M 3622 139 H 3643.0 V 114 H 3664 V 139 M 3664 139 H 3685.0 V 114 H 3706 V 139 M 3706 139 H 3727.0 V 114 H 3748 V 139 M 3748 139 H 3769.0 V 114 H 3790 V 139 M 3790 139 H 3811.0 V 114 H 3832 V 139 M 3832 139 H 3853.0 V 114 H 3874 V 139 M 3874 139 H 3895.0 V 114 H 3916 V 139 M 3916 139 H 3937.0 V 114 H 3958 V 139 M 3958 139 H 3979.0 V 114 H 4000 V 139 M 4000 139 H 4021.0 V 114 H 4042 V 139" fill="none" stroke="#334155" stroke-width="2"/>
+<rect x="8" y="152" width="4054" height="48" fill="#f8fafc"/>
 <text x="18.0" y="181.0" class="label" text-anchor="start">start</text>
-<path d="M 178 187 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<path d="M 178 187 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706 H 3748 H 3790 H 3832 H 3874 H 3916 H 3958 H 4000 H 4042" fill="none" stroke="#0f766e" stroke-width="2.2"/>
 <text x="18.0" y="229.0" class="label" text-anchor="start">busy</text>
-<path d="M 178 210 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 V 235 H 3664 H 3706" fill="none" stroke="#0f766e" stroke-width="2.2"/>
-<rect x="8" y="248" width="3718" height="48" fill="#f8fafc"/>
+<path d="M 178 210 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706 H 3748 H 3790 H 3832 H 3874 H 3916 H 3958 V 235 H 4000 H 4042" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<rect x="8" y="248" width="4054" height="48" fill="#f8fafc"/>
 <text x="18.0" y="277.0" class="label" text-anchor="start">pc</text>
-<rect x="179" y="255" width="1804" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1081.0" y="275.0" class="bus" text-anchor="middle">0</text>
-<rect x="1985" y="255" width="1552" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2761.0" y="275.0" class="bus" text-anchor="middle">1</text>
-<rect x="3539" y="255" width="166" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3622.0" y="275.0" class="bus" text-anchor="middle">2</text>
+<rect x="179" y="255" width="1972" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1165.0" y="275.0" class="bus" text-anchor="middle">0</text>
+<rect x="2153" y="255" width="1720" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3013.0" y="275.0" class="bus" text-anchor="middle">1</text>
+<rect x="3875" y="255" width="166" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3958.0" y="275.0" class="bus" text-anchor="middle">2</text>
 <text x="18.0" y="325.0" class="label" text-anchor="start">state_q</text>
 <rect x="179" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
 <text x="199.0" y="323.0" class="bus" text-anchor="middle">FETCH</text>
 <rect x="221" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
 <text x="241.0" y="323.0" class="bus" text-anchor="middle">DECODE</text>
-<rect x="263" y="303" width="502" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="514.0" y="323.0" class="bus" text-anchor="middle">W_REQ</text>
-<rect x="767" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="787.0" y="323.0" class="bus" text-anchor="middle">W_WAIT</text>
-<rect x="809" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="829.0" y="323.0" class="bus" text-anchor="middle">LOAD_W</text>
-<rect x="851" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="871.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
-<rect x="893" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="913.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
-<rect x="935" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1081.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
-<rect x="1229" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1249.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
-<rect x="1271" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1291.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
-<rect x="1313" y="303" width="292" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1459.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
-<rect x="1607" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1627.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
-<rect x="1649" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1669.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
-<rect x="1691" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1837.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
-<rect x="1985" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2005.0" y="323.0" class="bus" text-anchor="middle">FETCH</text>
-<rect x="2027" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2047.0" y="323.0" class="bus" text-anchor="middle">DECODE</text>
-<rect x="2069" y="303" width="250" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2194.0" y="323.0" class="bus" text-anchor="middle">W_REQ</text>
-<rect x="2321" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2341.0" y="323.0" class="bus" text-anchor="middle">W_WAIT</text>
-<rect x="2363" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2383.0" y="323.0" class="bus" text-anchor="middle">LOAD_W</text>
-<rect x="2405" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2425.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
-<rect x="2447" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2467.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
-<rect x="2489" y="303" width="292" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2635.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="263" y="303" width="166" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="346.0" y="323.0" class="bus" text-anchor="middle">VALIDATE</text>
+<rect x="431" y="303" width="502" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="682.0" y="323.0" class="bus" text-anchor="middle">W_REQ</text>
+<rect x="935" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="955.0" y="323.0" class="bus" text-anchor="middle">W_WAIT</text>
+<rect x="977" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="997.0" y="323.0" class="bus" text-anchor="middle">LOAD_W</text>
+<rect x="1019" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1039.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
+<rect x="1061" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1081.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
+<rect x="1103" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1249.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="1397" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1417.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
+<rect x="1439" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1459.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
+<rect x="1481" y="303" width="292" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1627.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="1775" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1795.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
+<rect x="1817" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1837.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
+<rect x="1859" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2005.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="2153" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2173.0" y="323.0" class="bus" text-anchor="middle">FETCH</text>
+<rect x="2195" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2215.0" y="323.0" class="bus" text-anchor="middle">DECODE</text>
+<rect x="2237" y="303" width="166" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2320.0" y="323.0" class="bus" text-anchor="middle">VALIDATE</text>
+<rect x="2405" y="303" width="250" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2530.0" y="323.0" class="bus" text-anchor="middle">W_REQ</text>
+<rect x="2657" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2677.0" y="323.0" class="bus" text-anchor="middle">W_WAIT</text>
+<rect x="2699" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2719.0" y="323.0" class="bus" text-anchor="middle">LOAD_W</text>
+<rect x="2741" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2761.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
 <rect x="2783" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2803.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
-<rect x="2825" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2845.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
-<rect x="2867" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3013.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<text x="2803.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
+<rect x="2825" y="303" width="292" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2971.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="3119" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3139.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
 <rect x="3161" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3181.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
-<rect x="3203" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3223.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
-<rect x="3245" y="303" width="292" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3391.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<text x="3181.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
+<rect x="3203" y="303" width="292" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3349.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="3497" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3517.0" y="323.0" class="bus" text-anchor="middle">A_WAIT</text>
 <rect x="3539" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3559.0" y="323.0" class="bus" text-anchor="middle">FETCH</text>
-<rect x="3581" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3601.0" y="323.0" class="bus" text-anchor="middle">DECODE</text>
-<rect x="3623" y="303" width="82" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3664.0" y="323.0" class="bus" text-anchor="middle">IDLE</text>
-<rect x="8" y="344" width="3718" height="48" fill="#f8fafc"/>
+<text x="3559.0" y="323.0" class="bus" text-anchor="middle">ISSUE</text>
+<rect x="3581" y="303" width="292" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3727.0" y="323.0" class="bus" text-anchor="middle">DRAIN</text>
+<rect x="3875" y="303" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3895.0" y="323.0" class="bus" text-anchor="middle">FETCH</text>
+<rect x="3917" y="303" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3937.0" y="323.0" class="bus" text-anchor="middle">DECODE</text>
+<rect x="3959" y="303" width="82" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="4000.0" y="323.0" class="bus" text-anchor="middle">IDLE</text>
+<rect x="8" y="344" width="4054" height="48" fill="#f8fafc"/>
 <text x="18.0" y="373.0" class="label" text-anchor="start">weight_load</text>
-<path d="M 178 379 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 V 354 H 850 V 379 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 V 354 H 2404 V 379 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<path d="M 178 379 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 V 354 H 1018 V 379 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 V 354 H 2740 V 379 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706 H 3748 H 3790 H 3832 H 3874 H 3916 H 3958 H 4000 H 4042" fill="none" stroke="#0f766e" stroke-width="2.2"/>
 <text x="18.0" y="421.0" class="label" text-anchor="start">array_input_valid</text>
-<path d="M 178 427 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 V 402 H 934 V 427 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 V 402 H 1312 V 427 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 V 402 H 1690 V 427 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 V 402 H 2488 V 427 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 V 402 H 2866 V 427 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 V 402 H 3244 V 427 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706" fill="none" stroke="#0f766e" stroke-width="2.2"/>
-<rect x="8" y="440" width="3718" height="48" fill="#f8fafc"/>
+<path d="M 178 427 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 V 402 H 1102 V 427 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 V 402 H 1480 V 427 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 V 402 H 1858 V 427 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 V 402 H 2824 V 427 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 V 402 H 3202 V 427 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 V 402 H 3580 V 427 H 3622 H 3664 H 3706 H 3748 H 3790 H 3832 H 3874 H 3916 H 3958 H 4000 H 4042" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<rect x="8" y="440" width="4054" height="48" fill="#f8fafc"/>
 <text x="18.0" y="469.0" class="label" text-anchor="start">issue_row_q</text>
-<rect x="179" y="447" width="1048" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="703.0" y="467.0" class="bus" text-anchor="middle">0</text>
-<rect x="1229" y="447" width="376" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1417.0" y="467.0" class="bus" text-anchor="middle">1</text>
-<rect x="1607" y="447" width="460" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1837.0" y="467.0" class="bus" text-anchor="middle">2</text>
-<rect x="2069" y="447" width="712" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2425.0" y="467.0" class="bus" text-anchor="middle">0</text>
-<rect x="2783" y="447" width="376" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2971.0" y="467.0" class="bus" text-anchor="middle">1</text>
-<rect x="3161" y="447" width="544" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3433.0" y="467.0" class="bus" text-anchor="middle">2</text>
+<rect x="179" y="447" width="1216" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="787.0" y="467.0" class="bus" text-anchor="middle">0</text>
+<rect x="1397" y="447" width="376" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1585.0" y="467.0" class="bus" text-anchor="middle">1</text>
+<rect x="1775" y="447" width="460" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2005.0" y="467.0" class="bus" text-anchor="middle">2</text>
+<rect x="2237" y="447" width="880" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2677.0" y="467.0" class="bus" text-anchor="middle">0</text>
+<rect x="3119" y="447" width="376" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3307.0" y="467.0" class="bus" text-anchor="middle">1</text>
+<rect x="3497" y="447" width="544" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3769.0" y="467.0" class="bus" text-anchor="middle">2</text>
 <text x="18.0" y="517.0" class="label" text-anchor="start">array_output_valid[3:0]</text>
-<rect x="179" y="495" width="880" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="619.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
-<rect x="1061" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1081.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
-<rect x="1103" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1123.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
-<rect x="1145" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1165.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
-<rect x="1187" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1207.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
-<rect x="1229" y="495" width="208" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1333.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
-<rect x="1439" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1459.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
-<rect x="1481" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1501.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
-<rect x="1523" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1543.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
-<rect x="1565" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1585.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
-<rect x="1607" y="495" width="208" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1711.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
-<rect x="1817" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1837.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
-<rect x="1859" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1879.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
-<rect x="1901" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="1921.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
-<rect x="1943" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="1963.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
-<rect x="1985" y="495" width="628" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2299.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
-<rect x="2615" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2635.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
-<rect x="2657" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2677.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
-<rect x="2699" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2719.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
-<rect x="2741" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="2761.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
-<rect x="2783" y="495" width="208" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="2887.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="179" y="495" width="1048" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="703.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="1229" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1249.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
+<rect x="1271" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1291.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
+<rect x="1313" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1333.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
+<rect x="1355" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1375.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="1397" y="495" width="208" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1501.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="1607" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1627.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
+<rect x="1649" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1669.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
+<rect x="1691" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1711.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
+<rect x="1733" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="1753.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="1775" y="495" width="208" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1879.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="1985" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2005.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
+<rect x="2027" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2047.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
+<rect x="2069" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2089.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
+<rect x="2111" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2131.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="2153" y="495" width="796" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="2551.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="2951" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="2971.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
 <rect x="2993" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3013.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
+<text x="3013.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
 <rect x="3035" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3055.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
+<text x="3055.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
 <rect x="3077" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3097.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
-<rect x="3119" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3139.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
-<rect x="3161" y="495" width="208" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3265.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<text x="3097.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="3119" y="495" width="208" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3223.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="3329" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3349.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
 <rect x="3371" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3391.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
+<text x="3391.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
 <rect x="3413" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3433.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
+<text x="3433.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
 <rect x="3455" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3475.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
-<rect x="3497" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
-<text x="3517.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
-<rect x="3539" y="495" width="166" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
-<text x="3622.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
-<rect x="8" y="536" width="3718" height="48" fill="#f8fafc"/>
+<text x="3475.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="3497" y="495" width="208" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3601.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="3707" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3727.0" y="515.0" class="bus" text-anchor="middle">0b0001</text>
+<rect x="3749" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3769.0" y="515.0" class="bus" text-anchor="middle">0b0010</text>
+<rect x="3791" y="495" width="40" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3811.0" y="515.0" class="bus" text-anchor="middle">0b0100</text>
+<rect x="3833" y="495" width="40" height="31" rx="5" fill="#ecfeff" stroke="#2563eb"/>
+<text x="3853.0" y="515.0" class="bus" text-anchor="middle">0b1000</text>
+<rect x="3875" y="495" width="166" height="31" rx="5" fill="#eff6ff" stroke="#2563eb"/>
+<text x="3958.0" y="515.0" class="bus" text-anchor="middle">0b0000</text>
+<rect x="8" y="536" width="4054" height="48" fill="#f8fafc"/>
 <text x="18.0" y="565.0" class="label" text-anchor="start">fault</text>
-<path d="M 178 571 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<path d="M 178 571 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706 H 3748 H 3790 H 3832 H 3874 H 3916 H 3958 H 4000 H 4042" fill="none" stroke="#0f766e" stroke-width="2.2"/>
 <text x="18.0" y="613.0" class="label" text-anchor="start">done</text>
-<path d="M 178 619 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 V 594 H 3664 V 619 H 3706" fill="none" stroke="#0f766e" stroke-width="2.2"/>
-<text x="20.0" y="680.0" class="foot" text-anchor="start">source: d166486624308ff8…  •  falling-edge samples  •  generated by scripts/render_waveforms.py</text>
+<path d="M 178 619 H 220 H 262 H 304 H 346 H 388 H 430 H 472 H 514 H 556 H 598 H 640 H 682 H 724 H 766 H 808 H 850 H 892 H 934 H 976 H 1018 H 1060 H 1102 H 1144 H 1186 H 1228 H 1270 H 1312 H 1354 H 1396 H 1438 H 1480 H 1522 H 1564 H 1606 H 1648 H 1690 H 1732 H 1774 H 1816 H 1858 H 1900 H 1942 H 1984 H 2026 H 2068 H 2110 H 2152 H 2194 H 2236 H 2278 H 2320 H 2362 H 2404 H 2446 H 2488 H 2530 H 2572 H 2614 H 2656 H 2698 H 2740 H 2782 H 2824 H 2866 H 2908 H 2950 H 2992 H 3034 H 3076 H 3118 H 3160 H 3202 H 3244 H 3286 H 3328 H 3370 H 3412 H 3454 H 3496 H 3538 H 3580 H 3622 H 3664 H 3706 H 3748 H 3790 H 3832 H 3874 H 3916 H 3958 V 594 H 4000 V 619 H 4042" fill="none" stroke="#0f766e" stroke-width="2.2"/>
+<text x="20.0" y="680.0" class="foot" text-anchor="start">source: 1adeaafba45a2403…  •  falling-edge samples  •  generated by scripts/render_waveforms.py</text>
 </svg>

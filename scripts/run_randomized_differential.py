@@ -311,6 +311,7 @@ def compile_testbench(iverilog: str, output_path: Path) -> None:
         str(output_path),
         "rtl/systolic_pe.sv",
         "rtl/systolic_array.sv",
+        "rtl/systolicforge_matmul_validator.sv",
         "rtl/systolicforge_sdp_ram.sv",
         "rtl/systolicforge_npu.sv",
         "rtl/scratchpad_dma.sv",

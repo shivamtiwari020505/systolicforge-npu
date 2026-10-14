@@ -18,6 +18,7 @@ try {
         -s tb_compiled_program -o $output `
         rtl\systolic_pe.sv `
         rtl\systolic_array.sv `
+        rtl\systolicforge_matmul_validator.sv `
         fpga\common\systolicforge_fpga_engine.sv `
         tb\tb_compiled_program.sv
     if ($LASTEXITCODE -ne 0) {

@@ -4,7 +4,13 @@ YOSYS_DATDIR ?= /usr/share/yosys
 
 .PHONY: test core array-edges memory-foundation memory-foundation-synth npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiled-e2e soc-e2e random-diff compiler lint synth gate-sim synth-xc7 waveforms diagrams evidence
 
-test: core array-edges memory-foundation memory-redesign npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiler compiled-e2e soc-e2e random-diff
+test: core array-edges validator memory-foundation memory-redesign npu dma faults axi-lite fpga-demo fpga-engine fpga-uart-demo compiler compiled-e2e soc-e2e random-diff
+
+.PHONY: validator
+validator: build
+	iverilog -g2012 -Wall -s tb_matmul_validator -o build/validator.vvp \
+		rtl/systolicforge_matmul_validator.sv tb/tb_matmul_validator.sv
+	vvp build/validator.vvp
 
 build:
 	mkdir -p build
@@ -34,7 +40,7 @@ memory-foundation-synth: build
 memory-redesign: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_npu_memory_redesign -o build/memory_redesign.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv \
 		rtl/systolicforge_npu.sv tb/reference/systolicforge_npu_legacy.sv \
 		tb/tb_npu_memory_redesign.sv
 	vvp build/memory_redesign.vvp
@@ -45,7 +51,7 @@ synth-npu-full: build
 npu: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_npu -o build/npu.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		tb/tb_systolicforge_npu.sv
 	vvp build/npu.vvp
 
@@ -57,7 +63,7 @@ dma: build
 faults: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_fault_reporting -o build/faults.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_fault_reporting.sv
 	vvp build/faults.vvp
@@ -65,7 +71,7 @@ faults: build
 axi-lite: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_axi_lite -o build/axi_lite.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		rtl/systolicforge_axi_lite.sv tb/tb_systolicforge_axi_lite.sv
 	vvp build/axi_lite.vvp
@@ -82,14 +88,14 @@ fpga-engine: build
 		--scratchpad-depth 128 --imem-depth 16
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DFPGA_ENGINE \
 		-s tb_compiled_program -o build/fpga_engine.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv \
 		fpga/common/systolicforge_fpga_engine.sv tb/tb_compiled_program.sv
 	vvp build/fpga_engine.vvp
 
 fpga-uart-demo: build
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_fpga_uart_demo -o build/fpga_uart_demo.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv \
 		fpga/common/systolicforge_fpga_engine.sv \
 		fpga/common/systolicforge_uart_rx.sv \
 		fpga/common/systolicforge_uart_tx.sv \
@@ -104,18 +110,18 @@ lint:
 	verilator --lint-only --timing -Wall \
 		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL \
 		--top-module systolicforge_soc \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv
 	verilator --lint-only --timing -Wall \
 		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL \
 		--top-module systolicforge_axi_lite \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		rtl/systolicforge_axi_lite.sv
 	verilator --lint-only --timing -Wall \
 		-Wno-WIDTHEXPAND -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
 		--top-module systolicforge_fpga_uart_demo \
-		rtl/systolic_pe.sv rtl/systolic_array.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv \
 		fpga/common/systolicforge_fpga_engine.sv \
 		fpga/common/systolicforge_uart_rx.sv \
 		fpga/common/systolicforge_uart_tx.sv \
@@ -125,7 +131,7 @@ compiled-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_compiled_program -o build/compiled_program.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		tb/tb_compiled_program.sv
 	vvp build/compiled_program.vvp
 
@@ -133,21 +139,21 @@ soc-e2e: build
 	$(PYTHON) compiler/systolicforge_compile.py examples/matmul.json -o build/example_program
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_soc -o build/soc.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_systolicforge_soc.sv
 	vvp build/soc.vvp
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_soc -Ptb_systolicforge_soc.ADDR_W=7 \
 		-o build/soc_ooc_compact.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_systolicforge_soc.sv
 	vvp build/soc_ooc_compact.vvp
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
 		-s tb_systolicforge_soc -Ptb_systolicforge_soc.ADDR_W=12 \
 		-Ptb_systolicforge_soc.IMEM_DEPTH=256 -o build/soc_full.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv \
 		rtl/systolicforge_npu.sv rtl/scratchpad_dma.sv rtl/systolicforge_soc.sv \
 		tb/tb_systolicforge_soc.sv
 	vvp build/soc_full.vvp
@@ -175,7 +181,7 @@ waveforms: build
 	vvp build/waves/core.vvp
 	iverilog -g2012 -Wall -Wno-sensitivity-entire-array -DDUMP_VCD \
 		-s tb_systolicforge_npu -o build/waves/npu.vvp \
-		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+		rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
 		tb/tb_systolicforge_npu.sv
 	vvp build/waves/npu.vvp
 	$(PYTHON) scripts/render_waveforms.py build/waves docs/diagrams

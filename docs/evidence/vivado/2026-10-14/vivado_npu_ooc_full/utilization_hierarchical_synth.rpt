@@ -1,0 +1,39 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Wed Oct 14 00:07:38 2026
+| Host         : LAPTOP-FNG4RD0K running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file C:/shivami/systolicforge-fpga-closure-v5-launcher-fix/build/vivado_npu_ooc_full/utilization_hierarchical_synth.rpt
+| Design       : systolicforge_soc
+| Device       : xc7a35tcpg236-1
+| Speed File   : -1
+| Design State : Synthesized
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++--------------------------------------+---------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+|               Instance               |                 Module                | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs | RAMB36 | RAMB18 | DSP Blocks |
++--------------------------------------+---------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+| systolicforge_soc                    |                                 (top) |       1536 |       1456 |      64 |   16 | 1411 |      8 |      0 |         67 |
+|   (systolicforge_soc)                |                                 (top) |          0 |          0 |       0 |    0 |    0 |      0 |      0 |          0 |
+|   u_dma                              |                        scratchpad_dma |        130 |        130 |       0 |    0 |   68 |      0 |      0 |          0 |
+|   u_npu                              |                     systolicforge_npu |       1406 |       1326 |      64 |   16 | 1343 |      8 |      0 |         67 |
+|     (u_npu)                          |                     systolicforge_npu |        239 |        175 |      64 |    0 |  753 |      0 |      0 |          0 |
+|     u_array                          |                        systolic_array |        823 |        807 |       0 |   16 |  523 |      0 |      0 |         64 |
+|       (u_array)                      |                        systolic_array |         56 |         40 |       0 |   16 |  188 |      0 |      0 |          0 |
+|       g_pe_rows[7].g_pe_cols[2].u_pe |        systolic_pe__parameterized0_57 |        117 |        117 |       0 |    0 |    9 |      0 |      0 |          1 |
+|       g_pe_rows[7].g_pe_cols[3].u_pe |        systolic_pe__parameterized0_58 |         54 |         54 |       0 |    0 |    9 |      0 |      0 |          1 |
+|     u_c                              | systolicforge_sdp_ram__parameterized1 |         94 |         94 |       0 |    0 |    0 |      4 |      0 |          0 |
+|     u_imem                           |                 systolicforge_sdp_ram |        141 |        141 |       0 |    0 |    0 |      2 |      0 |          0 |
+|     u_validator                      |        systolicforge_matmul_validator |         36 |         36 |       0 |    0 |   67 |      0 |      0 |          3 |
++--------------------------------------+---------------------------------------+------------+------------+---------+------+------+--------+--------+------------+
+
+

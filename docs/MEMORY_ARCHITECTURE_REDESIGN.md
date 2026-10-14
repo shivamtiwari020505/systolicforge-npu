@@ -6,7 +6,12 @@ The scheduled synchronous-memory correction is implemented in
 `rtl/systolicforge_npu.sv` and used by `systolicforge_soc`. The original engine
 is saved in `tb/reference/systolicforge_npu_legacy.sv` for comparisons.
 Directed integration and legacy/golden tests pass; complete full-depth SoC
-mapping infers eight block RAMs. External Vivado and board evidence are pending.
+mapping infers eight block RAMs. The October 13 Vivado full-profile run also
+inferred eight BRAMs but failed its 100 MHz post-synthesis estimate. The new
+timing/reset correction passed the October 14 full-profile setup estimate
+(WNS +2.098 ns), still with eight BRAMs. The compact Basys3 demo separately
+meets routed 100 MHz timing and generates a bitstream; board validation remains
+pending. See [the archives](evidence/vivado/2026-10-14/README.md).
 
 The redesign preserves the existing software-visible contract:
 
@@ -177,7 +182,10 @@ tests, plus a proof that every accepted result is eventually committed.
    1213 LUT primitives and 4074 flip-flops in Yosys 0.33; no structural errors.
    `make synth-npu-full` enforces the block-RAM count.
 6. Vivado sources include the RAM primitive and the dissolve override is
-   removed. Vivado execution and archived reports are pending.
+   removed. The October 13 full-profile Vivado reports confirm eight BRAMs.
+   A post-synthesis WNS of -7.392 ns prompted the staged-validation/reset
+   correction in [FPGA_CLOSURE.md](FPGA_CLOSURE.md). The October 14 run confirms
+   eight BRAMs, 67 DSPs and estimated WNS +2.098 ns, with reports archived.
 7. Banking remains future performance work.
 
 The first latency optimization phase is implemented: consecutive synchronous

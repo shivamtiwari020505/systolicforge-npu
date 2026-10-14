@@ -17,6 +17,7 @@ try {
         -s tb_compiled_program -o $output `
         rtl\systolic_pe.sv `
         rtl\systolic_array.sv `
+        rtl\systolicforge_matmul_validator.sv `
         rtl\systolicforge_sdp_ram.sv `
         rtl\systolicforge_npu.sv `
         tb\tb_compiled_program.sv

@@ -8,6 +8,7 @@ iverilog -g2012 -Wall -Wno-sensitivity-entire-array `
     -s tb_fpga_uart_demo -o $output `
     (Join-Path $PSScriptRoot "..\rtl\systolic_pe.sv") `
     (Join-Path $PSScriptRoot "..\rtl\systolic_array.sv") `
+    (Join-Path $PSScriptRoot "..\rtl\systolicforge_matmul_validator.sv") `
     (Join-Path $PSScriptRoot "..\fpga\common\systolicforge_fpga_engine.sv") `
     (Join-Path $PSScriptRoot "..\fpga\common\systolicforge_uart_rx.sv") `
     (Join-Path $PSScriptRoot "..\fpga\common\systolicforge_uart_tx.sv") `

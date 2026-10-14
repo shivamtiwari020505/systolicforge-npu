@@ -21,6 +21,8 @@ jobs:
           vvp build/core.vvp
       - name: Verify array zero and accumulator-wrap edge cases
         run: make array-edges
+      - name: Verify staged instruction validation
+        run: make validator
       - name: Verify synchronous full-depth memory foundation
         run: make memory-foundation memory-foundation-synth
       - name: Compare full-depth scheduled and legacy engines
@@ -31,7 +33,7 @@ jobs:
         run: |
           iverilog -g2012 -Wall -Wno-sensitivity-entire-array \
             -s tb_systolicforge_npu -o build/npu.vvp \
-            rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+            rtl/systolic_pe.sv rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_npu.sv \
             tb/tb_systolicforge_npu.sv
           vvp build/npu.vvp
       - name: Verify DMA
@@ -59,7 +61,7 @@ jobs:
             -o build/example_program --array-rows 8 --array-cols 8
           iverilog -g2012 -Wall -Wno-sensitivity-entire-array -s tb_compiled_program \
             -o build/compiled_program.vvp rtl/systolic_pe.sv \
-            rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_npu.sv \
+            rtl/systolic_array.sv rtl/systolicforge_sdp_ram.sv rtl/systolicforge_matmul_validator.sv rtl/systolicforge_npu.sv \
             tb/tb_compiled_program.sv
           vvp build/compiled_program.vvp
       - name: Verify integrated compiler-DMA-SoC path

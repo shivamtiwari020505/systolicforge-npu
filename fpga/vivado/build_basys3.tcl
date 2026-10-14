@@ -6,7 +6,11 @@
 
 set script_dir [file dirname [file normalize [info script]]]
 set repo_root  [file normalize [file join $script_dir ../..]]
-set build_dir  [file join $repo_root build vivado_basys3]
+set run_root [file join $repo_root build]
+if {[info exists ::env(SYSTOLICFORGE_RUN_ROOT)]} {
+    set run_root [file normalize $::env(SYSTOLICFORGE_RUN_ROOT)]
+}
+set build_dir [file join $run_root vivado_basys3]
 set top_name   systolicforge_fpga_uart_demo
 set part_name  xc7a35tcpg236-1
 
@@ -15,6 +19,7 @@ file mkdir $build_dir
 set rtl_files [list \
     [file join $repo_root rtl systolic_pe.sv] \
     [file join $repo_root rtl systolic_array.sv] \
+    [file join $repo_root rtl systolicforge_matmul_validator.sv] \
     [file join $repo_root fpga common systolicforge_fpga_engine.sv] \
     [file join $repo_root fpga common systolicforge_uart_rx.sv] \
     [file join $repo_root fpga common systolicforge_uart_tx.sv] \
@@ -60,6 +65,7 @@ opt_design
 place_design
 phys_opt_design
 route_design
+phys_opt_design
 
 write_checkpoint -force [file join $build_dir post_route.dcp]
 set sdf_file [file join $build_dir post_route.sdf]
@@ -98,6 +104,9 @@ if {$worst_path eq ""} {
     error "No setup timing path was found after routing"
 }
 set route_wns [get_property SLACK $worst_path]
+set worst_hold [lindex [get_timing_paths -delay_type min -max_paths 1 -nworst 1] 0]
+if {$worst_hold eq ""} { error "No hold timing path was found after routing" }
+set route_whs [get_property SLACK $worst_hold]
 
 set manifest_path [file join $build_dir build_manifest.txt]
 set manifest [open $manifest_path w]
@@ -116,6 +125,10 @@ puts $manifest "uart_format=115200_8N1"
 puts $manifest "uart_clocks_per_bit=868"
 puts $manifest "clock_period_ns=10.000"
 puts $manifest "route_wns_ns=$route_wns"
+puts $manifest "route_whs_ns=$route_whs"
+puts $manifest "instruction_validation=registered_8x16_product_25bit_range_check"
+puts $manifest "row_addressing=incrementing_pointers"
+puts $manifest "control_reset=synchronous_active_low"
 puts $manifest "power_method=vectorless_estimate"
 puts $manifest "vivado_version=[version -short]"
 puts $manifest "generated_utc=[clock format [clock seconds] -gmt true -format {%Y-%m-%dT%H:%M:%SZ}]"
@@ -137,8 +150,24 @@ close $manifest
 if {$route_wns < 0.0} {
     error "Routed design fails the 10.000 ns setup constraint: WNS=$route_wns ns"
 }
+if {$route_whs < 0.0} {
+    error "Routed design fails hold timing: WHS=$route_whs ns"
+}
+set route_report [open [file join $build_dir route_status.rpt] r]
+set route_text [read $route_report]
+close $route_report
+if {![regexp {nets with routing errors[^\n]*:\s*([0-9]+)} $route_text -> route_errors]} {
+    error "Cannot verify routing errors from route_status.rpt"
+}
+if {$route_errors != 0} { error "Routing errors remain: $route_errors" }
+set drc_errors [get_drc_violations -filter {SEVERITY == Error}]
+if {[llength $drc_errors] != 0} { error "DRC errors remain: $drc_errors" }
 
 write_bitstream -force [file join $build_dir systolicforge_basys3.bit]
+set manifest [open $manifest_path a]
+puts $manifest "bitstream_generated=true"
+puts $manifest "completed_utc=[clock format [clock seconds] -gmt true -format {%Y-%m-%dT%H:%M:%SZ}]"
+close $manifest
 
 puts "INFO: Basys3 implementation completed with routed WNS=$route_wns ns"
 puts "INFO: Reports, checkpoint, and bitstream: $build_dir"

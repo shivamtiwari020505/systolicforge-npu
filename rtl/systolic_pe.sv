@@ -27,7 +27,9 @@ module systolic_pe #(
     wire signed [ACC_W-1:0] product_ext =
         {{(ACC_W-(2*DATA_W)){product[2*DATA_W-1]}}, product};
 
-    always_ff @(posedge clk or negedge rst_n) begin
+    // DSP48 pipeline registers support synchronous (not asynchronous) reset.
+    // This preserves the one-cycle PE contract and allows PREG/BREG packing.
+    always_ff @(posedge clk) begin
         if (!rst_n) begin
             weight_q            <= '0;
             activation_out      <= '0;

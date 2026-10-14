@@ -28,6 +28,7 @@ class OOCFlowTests(unittest.TestCase):
         for relative in [
             "fpga/vivado/synth_npu_ooc.tcl", "fpga/vivado/npu_ooc.xdc",
             "rtl/systolic_pe.sv", "rtl/systolic_array.sv",
+            "rtl/systolicforge_matmul_validator.sv",
             "rtl/systolicforge_sdp_ram.sv", "rtl/systolicforge_npu.sv", "rtl/scratchpad_dma.sv",
             "rtl/systolicforge_soc.sv",
         ]:
@@ -46,7 +47,9 @@ class OOCFlowTests(unittest.TestCase):
         self.tcl.eval("""
             proc version {args} { return TEST_STUB }
             proc set_param {args} { lappend ::tool_params $args }
-            proc get_cells {args} { return {ram_a ram_b ram_c ram_imem} }
+            proc get_cells {args} { return {ram_a ram_b ram_c0 ram_c1 ram_c2 ram_c3 ram_imem0 ram_imem1} }
+            proc get_timing_paths {args} { return {setup_path} }
+            proc get_property {args} { return 0.25 }
             proc synth_design {args} {
                 incr ::synth_calls
                 set ::synth_args $args
@@ -110,6 +113,26 @@ class OOCFlowTests(unittest.TestCase):
     def test_missing_block_ram_is_a_failed_run(self):
         self.tcl.eval('proc get_cells {args} { return {} }')
         with self.assertRaisesRegex(tkinter.TclError, "No block RAM inferred"):
+            self.run_flow("full")
+        self.assertNotIn("completed_utc=", self.manifest("full"))
+
+    def test_incorrect_full_capacity_block_count_fails(self):
+        self.tcl.eval('proc get_cells {args} { return {ram_one} }')
+        with self.assertRaisesRegex(tkinter.TclError, "expected 8"):
+            self.run_flow("full")
+        self.assertNotIn("completed_utc=", self.manifest("full"))
+
+    def test_negative_estimate_is_not_claimed_as_closure(self):
+        self.tcl.eval('proc get_property {args} { return -7.392 }')
+        self.run_flow("full")
+        manifest = self.manifest("full")
+        self.assertIn("synth_wns_ns=-7.392", manifest)
+        self.assertIn("synth_setup_target_met=0", manifest)
+        self.assertIn("fit_or_route_claim=none", manifest)
+
+    def test_missing_timing_path_fails(self):
+        self.tcl.eval('proc get_timing_paths {args} { return {} }')
+        with self.assertRaisesRegex(tkinter.TclError, "No constrained setup path"):
             self.run_flow("full")
         self.assertNotIn("completed_utc=", self.manifest("full"))
 
