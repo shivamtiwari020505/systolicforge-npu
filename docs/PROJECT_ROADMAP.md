@@ -46,6 +46,14 @@ Next validate the button self-test and `scripts/systolicforge_uart_host.py`
 on a physical Basys3. Board operation remains unclaimed until demonstration
 and host logs are archived; step 5 is not yet complete.
 
+Board access is not yet available. The remaining procedure is prepared in
+[BOARD_VALIDATION.md](BOARD_VALIDATION.md), including reuse of the archived
+bitstream, button-test evidence, repeated UART/golden comparisons, reset
+recovery, and evidence handoff. The host's `validate` command saves inputs,
+actual/expected outputs, status and hashes; its mocked software tests are not
+physical-board evidence. Do not rerun Vivado or advance the board completion
+status merely because this capture workflow is ready.
+
 The 2026-10-12 default-depth OOC attempt passed the original elaboration limit
 but expanded memories into very large register/mux structures (over 9 GB peak
 memory in the supplied log); the user stopped it after more than an hour.

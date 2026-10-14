@@ -185,6 +185,9 @@ The byte protocol and LED/status definitions are in
 [docs/UART_PROTOCOL.md](docs/UART_PROTOCOL.md) and
 [docs/FPGA.md](docs/FPGA.md). Reports and the bitstream land in
 `build/vivado_basys3/`.
+The existing archived bitstream can be used without rebuilding. Follow the
+[physical board validation checklist](docs/BOARD_VALIDATION.md) to capture the
+button test, repeated UART comparisons and reset recovery for step 5.
 
 For Sky130 with OpenLane 2:
 

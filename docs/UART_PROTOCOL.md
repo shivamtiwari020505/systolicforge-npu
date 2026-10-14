@@ -91,6 +91,13 @@ footprints against the compact board configuration, uploads program/A/B,
 starts compute, polls status, reads every C word, and compares it with the
 compiler-generated reference.
 
+For step 5 evidence, the `validate` subcommand additionally requires a passed
+button self-test and saves repeated uploads/readback plus raw decoded status,
+golden/actual hex files, compiler artifacts and software/bitstream hashes in a
+new directory. It rejects busy/fault/UART-error status and never overwrites
+existing evidence. See [BOARD_VALIDATION.md](BOARD_VALIDATION.md) for the full
+physical-board procedure and its limits.
+
 ## Button self-test interaction
 
 BTNC still runs the deterministic signed 8×8 self-test, but it now uses the

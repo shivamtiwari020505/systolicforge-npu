@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import platform
 import struct
 import sys
 import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -197,11 +201,19 @@ def _read_hex_words(path: Path) -> list[int]:
     return [int(line, 16) for line in path.read_text(encoding="ascii").splitlines()]
 
 
-def run_graph(client: SystolicForgeUART, graph_path: Path) -> tuple[int, int]:
+def _write_json(path: Path, value: object) -> None:
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+def run_graph(
+    client: SystolicForgeUART, graph_path: Path, evidence_dir: Path | None = None
+) -> tuple[int, int]:
     """Compile, upload, execute, and compare one JSON MatMul graph."""
     matrix_a, matrix_b, name = load_json_graph(graph_path)
     with tempfile.TemporaryDirectory(prefix="systolicforge_uart_") as temp_dir:
-        artifact_dir = Path(temp_dir)
+        artifact_dir = Path(temp_dir) if evidence_dir is None else evidence_dir
+        if evidence_dir is not None:
+            artifact_dir.mkdir(parents=True, exist_ok=False)
         manifest = compile_graph(
             matrix_a=matrix_a,
             matrix_b=matrix_b,
@@ -218,18 +230,108 @@ def run_graph(client: SystolicForgeUART, graph_path: Path) -> tuple[int, int]:
         matrix_b_words = _read_hex_words(artifact_dir / "b.hex")
         expected_c = _read_hex_words(artifact_dir / "c_expected.hex")
 
-        for address, instruction in enumerate(program):
-            client.write_program(address, instruction)
-        for address, value in enumerate(matrix_a_words):
-            client.write_memory(MEM_A, address, value)
-        for address, value in enumerate(matrix_b_words):
-            client.write_memory(MEM_B, address, value)
+        actual_c: list[int] = []
+        result: dict[str, object] = {"outcome": "ERROR", "expected_words": len(expected_c)}
+        try:
+            for address, instruction in enumerate(program):
+                client.write_program(address, instruction)
+            for address, value in enumerate(matrix_a_words):
+                client.write_memory(MEM_A, address, value)
+            for address, value in enumerate(matrix_b_words):
+                client.write_memory(MEM_B, address, value)
 
-        client.start()
-        client.wait_until_done()
-        actual_c = [client.read_memory(MEM_C, address) for address in range(len(expected_c))]
-        mismatches = sum(actual != expected for actual, expected in zip(actual_c, expected_c))
-        return mismatches, manifest["scratchpad_words"]["C"]
+            client.start()
+            result["completed_status"] = asdict(client.wait_until_done())
+            for address in range(len(expected_c)):
+                actual_c.append(client.read_memory(MEM_C, address))
+            mismatches = sum(actual != expected for actual, expected in zip(actual_c, expected_c))
+            result.update(outcome="FAIL" if mismatches else "PASS", mismatches=mismatches)
+            return mismatches, manifest["scratchpad_words"]["C"]
+        finally:
+            if evidence_dir is not None:
+                (artifact_dir / "c_actual.hex").write_text(
+                    "".join(f"{word:08x}\n" for word in actual_c), encoding="ascii"
+                )
+                result["read_words"] = len(actual_c)
+                _write_json(artifact_dir / "result.json", result)
+
+
+def _check_validation_status(status: BoardStatus, *, completed: bool = False) -> None:
+    if status.protocol_version != 1:
+        raise UARTProtocolError(f"unsupported protocol version {status.protocol_version}")
+    if (status.busy or status.self_test_active or status.fault or status.self_test_fail
+            or status.framing_error or status.command_error):
+        raise UARTProtocolError(f"board is not idle/error-free: {_format_status(status)}")
+    if not status.self_test_pass:
+        raise UARTProtocolError("button self-test has not passed; press BTNC before validation")
+    if completed and not status.done:
+        raise UARTProtocolError("completion status is not asserted")
+
+
+def validate_board(
+    client: SystolicForgeUART,
+    graph_path: Path,
+    bitstream_path: Path,
+    evidence_dir: Path,
+    repeats: int = 3,
+    connection: dict[str, object] | None = None,
+) -> None:
+    """Capture a button-status check and repeated UART/golden comparisons.
+
+    The bitstream hash identifies the operator-supplied file, not JTAG readback.
+    Tests may call this with a fake client; only actual board runs are evidence.
+    """
+    if repeats < 1:
+        raise ValueError("validation repeats must be positive")
+    # Read inputs before reserving the directory; never overwrite an earlier run.
+    bitstream_hash = hashlib.sha256(bitstream_path.read_bytes()).hexdigest()
+    graph_bytes = graph_path.read_bytes()
+    evidence_dir.mkdir(parents=True, exist_ok=False)
+    completed_runs: list[dict[str, object]] = []
+    report: dict[str, object] = {
+        "outcome": "ERROR",
+        "started_utc": datetime.now(timezone.utc).isoformat(),
+        "scope": "compact Basys3 button status and UART MatMul; not full-NPU hardware",
+        "bitstream_sha256_operator_supplied": bitstream_hash,
+        "bitstream_file": bitstream_path.name,
+        "graph_sha256": hashlib.sha256(graph_bytes).hexdigest(),
+        "host_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "compiler_sha256": hashlib.sha256(
+            (REPO_ROOT / "compiler/systolicforge_compile.py").read_bytes()
+        ).hexdigest(),
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "connection": connection,
+        "requested_runs": repeats,
+        "completed_runs": completed_runs,
+    }
+    try:
+        saved_graph = evidence_dir / "graph.json"
+        saved_graph.write_bytes(graph_bytes)
+        report["protocol_id"] = client.ping()
+        initial = client.status()
+        report["initial_status"] = asdict(initial)
+        _check_validation_status(initial)
+        for index in range(1, repeats + 1):
+            mismatches, words = run_graph(client, saved_graph, evidence_dir / f"run_{index:02d}")
+            run_result: dict[str, object] = {
+                "run": index, "result_words": words, "mismatches": mismatches,
+            }
+            completed_runs.append(run_result)
+            if mismatches:
+                report["outcome"] = "FAIL"
+                raise UARTProtocolError(f"run {index}: {mismatches} of {words} words differ")
+            final = client.status()
+            run_result["final_status"] = asdict(final)
+            _check_validation_status(final, completed=True)
+            print(f"PASS: run {index}/{repeats}, all {words} words match")
+        report["outcome"] = "PASS"
+    except Exception as exc:
+        report["error"] = str(exc)
+        raise
+    finally:
+        report["finished_utc"] = datetime.now(timezone.utc).isoformat()
+        _write_json(evidence_dir / "board_result.json", report)
 
 
 def _open_serial(port: str, baud: int, timeout: float) -> ByteTransport:
@@ -265,6 +367,15 @@ def build_argument_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("status", help="read board/engine status")
     run_parser = subparsers.add_parser("run", help="compile and execute a JSON MatMul")
     run_parser.add_argument("graph", type=Path)
+    validation_parser = subparsers.add_parser(
+        "validate", help="require the button self-test and save repeated UART checks"
+    )
+    validation_parser.add_argument("graph", type=Path)
+    validation_parser.add_argument("--bitstream", type=Path, required=True,
+                                   help="the .bit file you programmed (hash recorded, not read back)")
+    validation_parser.add_argument("--output", type=Path, required=True,
+                                   help="new evidence directory; existing directories are refused")
+    validation_parser.add_argument("--repeats", type=int, default=3)
     return parser
 
 
@@ -278,6 +389,12 @@ def main() -> int:
                 print(f"SystolicForge board responded: 0x{client.ping():08x}")
             elif args.action == "status":
                 print(_format_status(client.status()))
+            elif args.action == "validate":
+                validate_board(
+                    client, args.graph, args.bitstream, args.output, args.repeats,
+                    {"port": args.port, "baud": args.baud, "serial_timeout_seconds": args.timeout},
+                )
+                print(f"UART validation passed; evidence saved at {args.output}")
             else:
                 client.ping()
                 mismatches, result_words = run_graph(client, args.graph)

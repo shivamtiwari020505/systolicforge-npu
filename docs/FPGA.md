@@ -53,6 +53,9 @@ endpoints and routing errors. Routed utilization is 1389 LUTs, 1795 flip-flops
 and 67 DSPs; compact scratchpads use distributed RAM, not BRAM. Setup margin
 is narrow. See [the complete evidence](evidence/vivado/2026-10-14/README.md).
 Physical board self-test/UART validation remains pending.
+Follow [BOARD_VALIDATION.md](BOARD_VALIDATION.md) to reuse the archived bitstream
+and capture the remaining physical-board evidence; a new Vivado run is not
+required for that procedure.
 
 The Basys3 USB-UART bridge is connected at 115200 8N1. The binary protocol can
 write 128-bit instructions, write or read A/B/C words, start compute, and read
